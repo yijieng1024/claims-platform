@@ -99,6 +99,13 @@ class ReportApiTest {
 
     @Test
     void exposureIsPerCurrencyAndOnlyOpenClaims() throws Exception {
+        // Q24: all six currencies in fixed order, even with no claims at all
+        mvc.perform(get("/api/reports/exposure").with(token(MANAGER)))
+                .andExpect(jsonPath("$.asOf").isEmpty())
+                .andExpect(jsonPath("$.currencies[*].currency").value(contains("MYR", "SGD", "THB", "IDR", "PHP", "VND")))
+                .andExpect(jsonPath("$.currencies[*].reservedExposure").value(contains(0, 0, 0, 0, 0, 0)))
+                .andExpect(jsonPath("$.currencies[*].unreservedCount").value(contains(0, 0, 0, 0, 0, 0)));
+
         var myReserved1 = new TestClaim("MY", "MYR", CLAIMANT1, "900");
         apply(myReserved1.submitted(), myReserved1.assigned(OFFICER_MY1, T0), myReserved1.assessed("500.00"));
         var myReserved2 = new TestClaim("MY", "MYR", CLAIMANT1, "400");
@@ -114,11 +121,18 @@ class ReportApiTest {
         apply(sgReserved.submitted(), sgReserved.assigned(OFFICER_SG1, T0), sgReserved.assessed("700.00"));
         var sgRejected = new TestClaim("SG", "SGD", CLAIMANT2, "7000"); // closed without reserve: left out
         apply(sgRejected.submitted(), sgRejected.assigned(OFFICER_SG1, T0), sgRejected.rejected(T0));
+        var thSettled = new TestClaim("TH", "THB", CLAIMANT1, "300"); // THB has only a closed claim: zeros
+        apply(thSettled.submitted(), thSettled.assigned(OFFICER_MY1, T0), thSettled.assessed("200"),
+                thSettled.settled("200", T0));
 
         mvc.perform(get("/api/reports/exposure").with(token(MANAGER)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.asOf").isNotEmpty())
-                .andExpect(jsonPath("$.currencies.length()").value(2))
+                .andExpect(jsonPath("$.currencies[*].currency").value(contains("MYR", "SGD", "THB", "IDR", "PHP", "VND")))
+                .andExpect(jsonPath("$.currencies[2].reservedExposure").value(0))
+                .andExpect(jsonPath("$.currencies[2].reservedCount").value(0))
+                .andExpect(jsonPath("$.currencies[2].unreservedCount").value(0))
+                .andExpect(jsonPath("$.currencies[2].unreservedClaimedAmount").value(0))
                 .andExpect(jsonPath("$.currencies[0].currency").value("MYR"))
                 .andExpect(jsonPath("$.currencies[0].reservedExposure").value(800.50))
                 .andExpect(jsonPath("$.currencies[0].reservedCount").value(2))

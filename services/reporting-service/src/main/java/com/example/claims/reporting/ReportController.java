@@ -57,7 +57,10 @@ class ReportController {
                         + " GROUP BY market ORDER BY market").param("market", market).query(MarketCount.class).list());
     }
 
-    /** Q2/Q3: per currency, never converted; claimed amounts are kept apart from reserved exposure. */
+    /**
+     * Q2/Q3: per currency, never converted; claimed amounts are kept apart from reserved exposure. Q24:
+     * always all six currencies, in market order (MY, SG, TH, ID, PH, VN), with zeros when nothing is open.
+     */
     record CurrencyExposure(String currency, BigDecimal reservedExposure, long reservedCount, long unreservedCount,
             BigDecimal unreservedClaimedAmount) {
     }
@@ -69,12 +72,14 @@ class ReportController {
     @GetMapping("/exposure")
     Exposure exposure() {
         return new Exposure(asOf(null), jdbc.sql("""
-                        SELECT currency,
-                               coalesce(sum(reserve_amount), 0)                                         AS reserved_exposure,
-                               count(reserve_amount)                                                    AS reserved_count,
-                               count(*) FILTER (WHERE reserve_amount IS NULL)                           AS unreserved_count,
-                               coalesce(sum(claimed_amount) FILTER (WHERE reserve_amount IS NULL), 0)   AS unreserved_claimed_amount
-                        FROM claim_summary WHERE""" + " " + OPEN + " GROUP BY currency ORDER BY currency")
+                        SELECT cur.currency,
+                               coalesce(sum(s.reserve_amount), 0)                                                 AS reserved_exposure,
+                               count(s.reserve_amount)                                                            AS reserved_count,
+                               count(s.claim_id) FILTER (WHERE s.reserve_amount IS NULL)                          AS unreserved_count,
+                               coalesce(sum(s.claimed_amount) FILTER (WHERE s.reserve_amount IS NULL), 0)         AS unreserved_claimed_amount
+                        FROM (VALUES (1, 'MYR'), (2, 'SGD'), (3, 'THB'), (4, 'IDR'), (5, 'PHP'), (6, 'VND')) AS cur (ord, currency)
+                        LEFT JOIN claim_summary s ON s.currency = cur.currency AND s.%s
+                        GROUP BY cur.ord, cur.currency ORDER BY cur.ord""".formatted(OPEN))
                 .query(CurrencyExposure.class).list());
     }
 

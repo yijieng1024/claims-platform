@@ -56,8 +56,8 @@ public class ClaimEventProjector {
         int applied = jdbc.sql("""
                         INSERT INTO claim_summary (claim_id, claim_number, type, market, currency, status, claimant_id,
                             assigned_officer_id, assigned_officer_name, claimed_amount, reserve_amount, settled_amount,
-                            submitted_at, assigned_at, closed_at, claim_version, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            submitted_at, assigned_at, closed_at, claim_version, last_event_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (claim_id) DO UPDATE SET
                             claim_number = EXCLUDED.claim_number, type = EXCLUDED.type, market = EXCLUDED.market,
                             currency = EXCLUDED.currency, status = EXCLUDED.status, claimant_id = EXCLUDED.claimant_id,
@@ -66,11 +66,13 @@ public class ClaimEventProjector {
                             claimed_amount = EXCLUDED.claimed_amount, reserve_amount = EXCLUDED.reserve_amount,
                             settled_amount = EXCLUDED.settled_amount, submitted_at = EXCLUDED.submitted_at,
                             assigned_at = EXCLUDED.assigned_at, closed_at = EXCLUDED.closed_at,
-                            claim_version = EXCLUDED.claim_version, updated_at = EXCLUDED.updated_at
+                            claim_version = EXCLUDED.claim_version, last_event_at = EXCLUDED.last_event_at,
+                            updated_at = EXCLUDED.updated_at
                         WHERE claim_summary.claim_version < EXCLUDED.claim_version""")
                 .params(c.id(), c.claimNumber(), c.type(), c.market(), c.currency(), c.status(), c.claimantId(),
                         c.assignedOfficerId(), c.assignedOfficerName(), c.claimedAmount(), c.reserveAmount(),
-                        c.settledAmount(), utc(c.createdAt()), utc(c.assignedAt()), utc(c.closedAt()), c.version(), now)
+                        c.settledAmount(), utc(c.createdAt()), utc(c.assignedAt()), utc(c.closedAt()), c.version(),
+                        utc(event.occurredAt()), now)
                 .update();
         if (applied == 0) {
             return; // not newer than what we have (out of order)

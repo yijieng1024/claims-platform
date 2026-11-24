@@ -5,6 +5,7 @@ import com.example.claims.events.ClaimEventType;
 import com.example.claims.events.ClaimSnapshot;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -98,7 +99,7 @@ public final class TestClaim {
         var snapshot = new ClaimSnapshot(id, number, version, "POL-" + market + "-MTR-0001", "MOTOR", market, currency,
                 status, claimant.id(), officer == null ? null : officer.id(), officer == null ? null : officer.name(),
                 claimed, reserve, settled, createdAt, assignedAt, closedAt);
-        return new ClaimEvent(UUID.randomUUID(), type, Instant.now(),
+        return new ClaimEvent(UUID.randomUUID(), type, Instant.now().truncatedTo(ChronoUnit.MICROS), // DB precision
                 new ClaimEvent.Actor(actor.id(), actor.name(), actor.role()), snapshot);
     }
 }

@@ -18,7 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Dashboards: plain SQL over {@code claim_summary}, no stored counters (design 6.3). "Open" = not
  * SETTLED and not REJECTED. Officers always get their own market; managers all, or one via {@code market}.
- * {@code asOf} is when reporting last changed a summary row (null if there are none yet).
+ * {@code asOf} (Q21) is the newest event time ({@code occurredAt}) reflected in the rows the report covers,
+ * i.e. its market scope, closed claims included since closing one changes the report (null if none).
  * <p>
  * Workload and performance list only officers who appear in {@code claim_summary}: reporting learns
  * about officers from events, so one who never picked up a claim isn't listed.
@@ -49,7 +50,7 @@ class ReportController {
     @GetMapping("/outstanding")
     Outstanding outstanding(@AuthenticationPrincipal Jwt jwt) {
         String market = marketFor(jwt, null);
-        return new Outstanding(asOf(),
+        return new Outstanding(asOf(market),
                 jdbc.sql("SELECT status, count(*) AS count FROM claim_summary WHERE " + OPEN + " AND " + IN_MARKET
                         + " GROUP BY status ORDER BY status").param("market", market).query(StatusCount.class).list(),
                 jdbc.sql("SELECT market, count(*) AS count FROM claim_summary WHERE " + OPEN + " AND " + IN_MARKET
@@ -67,7 +68,7 @@ class ReportController {
     @Operation(summary = "Manager: per currency, reserves of open claims, and open claims without a reserve")
     @GetMapping("/exposure")
     Exposure exposure() {
-        return new Exposure(asOf(), jdbc.sql("""
+        return new Exposure(asOf(null), jdbc.sql("""
                         SELECT currency,
                                coalesce(sum(reserve_amount), 0)                                         AS reserved_exposure,
                                count(reserve_amount)                                                    AS reserved_count,
@@ -87,7 +88,8 @@ class ReportController {
     @Operation(summary = "Open claims per officer, by status (officer: own market; manager: all or ?market=)")
     @GetMapping("/workload")
     Workload workload(@AuthenticationPrincipal Jwt jwt, @RequestParam(required = false) String market) {
-        return new Workload(asOf(), jdbc.sql("""
+        String m = marketFor(jwt, market);
+        return new Workload(asOf(m), jdbc.sql("""
                         SELECT assigned_officer_id AS officer_id, max(assigned_officer_name) AS officer_name, market,
                                count(*) FILTER (WHERE %s)                        AS open_claims,
                                count(*) FILTER (WHERE status = 'UNDER_REVIEW')   AS under_review,
@@ -96,7 +98,7 @@ class ReportController {
                         FROM claim_summary
                         WHERE assigned_officer_id IS NOT NULL AND %s
                         GROUP BY assigned_officer_id, market ORDER BY market, officer_name""".formatted(OPEN, IN_MARKET))
-                .param("market", marketFor(jwt, market)).query(OfficerWorkload.class).list());
+                .param("market", m).query(OfficerWorkload.class).list());
     }
 
     record Amount(String currency, BigDecimal amount) {
@@ -122,7 +124,7 @@ class ReportController {
                 .query((rs, n) -> Map.entry(rs.getObject(1, UUID.class), new Amount(rs.getString(2), rs.getBigDecimal(3))))
                 .list().stream()
                 .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
-        return new Performance(asOf(), jdbc.sql("""
+        return new Performance(asOf(m), jdbc.sql("""
                         SELECT assigned_officer_id, max(assigned_officer_name), market,
                                count(*) FILTER (WHERE closed_at IS NOT NULL),
                                count(*) FILTER (WHERE status = 'SETTLED'),
@@ -139,8 +141,9 @@ class ReportController {
                 }).list());
     }
 
-    private OffsetDateTime asOf() {
-        return jdbc.sql("SELECT max(updated_at) FROM claim_summary").query(OffsetDateTime.class).list().getFirst();
+    private OffsetDateTime asOf(String market) {
+        return jdbc.sql("SELECT max(last_event_at) FROM claim_summary WHERE " + IN_MARKET).param("market", market)
+                .query(OffsetDateTime.class).list().getFirst();
     }
 
     /** Officers are always limited to their own market (Q15); managers get what they asked for (null = all). */

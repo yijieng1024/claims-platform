@@ -7,6 +7,7 @@ import static com.example.claims.reporting.TestClaim.OFFICER_MY1;
 import static com.example.claims.reporting.TestClaim.OFFICER_MY2;
 import static com.example.claims.reporting.TestClaim.OFFICER_SG1;
 import static com.example.claims.reporting.TestClaim.token;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,6 +20,7 @@ import com.example.claims.reporting.events.ClaimEventProjector;
 import com.jayway.jsonpath.JsonPath;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,19 +71,30 @@ class ReportApiTest {
         var assessed = new TestClaim("MY", "MYR", CLAIMANT1, "100");
         apply(assessed.submitted(), assessed.assigned(OFFICER_MY1, T0), assessed.assessed("50"));
         var sg = new TestClaim("SG", "SGD", CLAIMANT2, "100");
-        apply(sg.submitted());
+        ClaimEvent sgSubmitted = sg.submitted();
+        apply(sgSubmitted);
         var settled = new TestClaim("MY", "MYR", CLAIMANT1, "100");
-        apply(settled.submitted(), settled.assigned(OFFICER_MY1, T0), settled.assessed("50"), settled.settled("50", T0));
+        ClaimEvent settle;
+        apply(settled.submitted(), settled.assigned(OFFICER_MY1, T0), settled.assessed("50"),
+                settle = settled.settled("50", T0));
 
-        mvc.perform(get("/api/reports/outstanding").with(token(MANAGER)))
-                .andExpect(jsonPath("$.asOf").isNotEmpty())
+        String body = mvc.perform(get("/api/reports/outstanding").with(token(MANAGER)))
                 .andExpect(jsonPath("$.byStatus[*].status").value(contains("ASSESSED", "SUBMITTED")))
                 .andExpect(jsonPath("$.byStatus[*].count").value(contains(1, 2)))
                 .andExpect(jsonPath("$.byMarket[*].market").value(contains("MY", "SG")))
-                .andExpect(jsonPath("$.byMarket[*].count").value(contains(2, 1)));
-        mvc.perform(get("/api/reports/outstanding").with(token(OFFICER_SG1)))
+                .andExpect(jsonPath("$.byMarket[*].count").value(contains(2, 1)))
+                .andReturn().getResponse().getContentAsString();
+        // Q21: asOf is the newest event time in scope; settling a claim changed this report too
+        assertThat(asOf(body)).isEqualTo(settle.occurredAt());
+        body = mvc.perform(get("/api/reports/outstanding").with(token(OFFICER_SG1)))
                 .andExpect(jsonPath("$.byMarket[*].market").value(contains("SG")))
-                .andExpect(jsonPath("$.byStatus[*].count").value(contains(1)));
+                .andExpect(jsonPath("$.byStatus[*].count").value(contains(1)))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(asOf(body)).isEqualTo(sgSubmitted.occurredAt());
+    }
+
+    private static Instant asOf(String body) {
+        return OffsetDateTime.parse(JsonPath.read(body, "$.asOf")).toInstant();
     }
 
     @Test

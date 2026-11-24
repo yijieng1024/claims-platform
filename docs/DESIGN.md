@@ -1,6 +1,6 @@
-# Claims Platform — Architecture & Data Model (v0.7)
+# Claims Platform — Architecture & Data Model (v0.8)
 
-Status: **v0.7 - decisions agreed** (see section 14).
+Status: **v0.8 - decisions agreed** (see section 14).
 
 ---
 
@@ -365,7 +365,12 @@ Actions are separate endpoints (not one generic "PATCH status"), because each tr
 ## 9. File upload (simple version, with UI)
 
 - Stored on local disk under `./data/uploads/{claimId}/{storedFilename}` (Docker volume).
-- Max 10 MB per file; allowed: JPEG, PNG, PDF (checked by content type and extension).
+- Max 10 MB per file → 413. Allowed: JPEG, PNG, PDF — checked by extension, declared content type **and the file's first bytes** (JPEG `FF D8 FF`, PNG `89 50 4E 47`, PDF `%PDF`) → 415 on mismatch.
+- Stored under a random UUID filename (never the original name) to prevent path traversal. Max 20 documents per claim; the claim row is locked during upload so concurrent uploads can't exceed it.
+- Uploads allowed in every status except `SETTLED` / `REJECTED`. Uploading doesn't change status or emit an event.
+- The 413 size check happens while the request is read, before the claim is known — the one exception to "permission first"; it reveals nothing about the claim.
+- A file missing from disk → 410 Gone. Known limitation: a crash between writing the file and committing the row leaves an orphan file; no cleanup job.
+- Storage sits behind a `DocumentStorage` interface (local disk now).
 - Download checks the same permission as reading the claim.
 - Production would replace local disk with object storage (S3) — documented as out of scope.
 
@@ -463,6 +468,8 @@ Repo layout:
 | Q22 | Notifications vs version check | Notifications created per event regardless of version; version check only guards the summary | No lost notifications if events arrive out of order. |
 | Q23 | Multi-instance ordering | Documented known limitation; one instance in scope | Raised by Claude Code. |
 | Q24 | Currencies with no open claims | Always return all six currencies, zeros included | Stable dashboard; "0" is explicit rather than missing. |
+| Q25 | Document upload details | First-byte check, UUID filenames, 20-file limit with row lock, 410 for missing files, orphan files documented | See §9. |
+| Q26 | Frontend delivery | Split into two briefs: foundation + claimant, then officer + manager + notifications | New to Angular; understand the foundation before building on it. |
 | Q6 | Markets | **MY, SG, TH, ID, PH, VN** (MYR, SGD, THB, IDR, PHP, VND) | Six Southeast Asian markets; illustrative only. |
 
 ### The three amounts on a claim

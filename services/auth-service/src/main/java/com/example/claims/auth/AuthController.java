@@ -29,7 +29,7 @@ class AuthController {
         this.users = users;
     }
 
-    /** Always creates a CLAIMANT. */
+    /** Always creates a CLAIMANT, and only for the holder of an existing, non-cancelled policy. */
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     UserResponse register(@Valid @RequestBody RegisterRequest request) {

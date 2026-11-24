@@ -24,6 +24,11 @@ auth:
     key-path: ${AUTH_JWT_KEY_PATH:${user.home}/.claims-platform/auth-jwt-key.pem}
     issuer: ${AUTH_JWT_ISSUER:http://localhost:8081}
     ttl: 1h
+  # registration asks claims-service whether the policy number + email are real
+  claims-service:
+    url: ${CLAIMS_SERVICE_URL:http://localhost:8082}
+    connect-timeout: 2s
+    read-timeout: 3s
 
 springdoc:
   swagger-ui:

@@ -24,6 +24,7 @@ class SecurityConfig {
         return auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.GET, "/.well-known/jwks.json").permitAll()
-                .anyRequest().authenticated();
+                // user roles only: our own SERVICE token is meant for claims-service, not this API
+                .anyRequest().hasAnyRole("CLAIMANT", "OFFICER", "MANAGER");
     }
 }

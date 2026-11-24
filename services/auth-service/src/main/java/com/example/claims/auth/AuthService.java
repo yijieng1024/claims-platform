@@ -24,8 +24,11 @@ import org.springframework.web.server.ResponseStatusException;
 class AuthService {
 
     static final String BAD_CREDENTIALS = "Invalid email or password";
+    /** One message whatever failed (number, email, cancelled), so policy details can't be probed. */
+    static final String POLICY_NOT_VERIFIED = "We couldn't verify these policy details.";
 
     private final UserRepository users;
+    private final PolicyCheckClient policyCheck;
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
     private final String issuer;
@@ -33,9 +36,11 @@ class AuthService {
     /** Checked against when the email is unknown, so both login failures take the same time. */
     private final String dummyHash;
 
-    AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder,
-                @Value("${auth.jwt.issuer}") String issuer, @Value("${auth.jwt.ttl}") Duration ttl) {
+    AuthService(UserRepository users, PolicyCheckClient policyCheck, PasswordEncoder passwordEncoder,
+                JwtEncoder jwtEncoder, @Value("${auth.jwt.issuer}") String issuer,
+                @Value("${auth.jwt.ttl}") Duration ttl) {
         this.users = users;
+        this.policyCheck = policyCheck;
         this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
         this.issuer = issuer;
@@ -48,14 +53,25 @@ class AuthService {
             // BCrypt only uses the first 72 bytes and Spring Security rejects longer input
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must be at most 72 bytes");
         }
-        var user = User.newClaimant(normalise(request.email()), passwordEncoder.encode(request.password()),
-                request.name().trim());
+        String email = normalise(request.email());
+        // checked before the policy call, so register can't be used to probe policies of a registered email
+        if (users.existsByEmail(email)) {
+            throw emailTaken();
+        }
+        if (!policyCheck.matches(request.policyNumber().trim(), email)) { // 503 if claims-service can't answer
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, POLICY_NOT_VERIFIED);
+        }
+        var user = User.newClaimant(email, passwordEncoder.encode(request.password()), request.name().trim());
         try {
             return UserResponse.of(users.saveAndFlush(user));
         } catch (DataIntegrityViolationException e) {
-            // unique constraint on email; also covers two concurrent registrations
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
+            // unique constraint on email: two concurrent registrations
+            throw emailTaken();
         }
+    }
+
+    private static ResponseStatusException emailTaken() {
+        return new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
     }
 
     LoginResponse login(String email, String password) {
@@ -75,7 +91,8 @@ class AuthService {
                 .issuedAt(now)
                 .expiresAt(now.plus(ttl))
                 .claim("role", user.getRole().name())
-                .claim("name", user.getFullName());
+                .claim("name", user.getFullName())
+                .claim("email", user.getEmail());
         if (user.getMarket() != null) {
             claims.claim("market", user.getMarket()); // left out (reads as null) for non-officers
         }

@@ -38,18 +38,21 @@ failure gives the same message.
 Register body: `{ "email", "password", "policyNumber" }`. The account name is the policy's holder
 name (a `name` field, if sent, is ignored).
 
+Cover periods are one year long and **relative to the day the database was first migrated**
+("today" = database date, UTC), so the demo data doesn't expire.
+
 | Policy number | Holder email | Type | Market | Status | Cover |
 |---|---|---|---|---|---|
-| `POL-MY-MTR-0001` | `claimant1@example.com` | MOTOR | MY | ACTIVE | 2026-03-01 – 2027-02-28 |
-| `POL-SG-PRP-0002` | `claimant1@example.com` | PROPERTY | SG | ACTIVE | 2026-07-01 – 2027-06-30 |
-| `POL-TH-MTR-0003` | `claimant1@example.com` | MOTOR | TH | ACTIVE, **expired** | 2024-05-01 – 2025-04-30 |
-| `POL-ID-MTR-0004` | `claimant2@example.com` | MOTOR | ID | ACTIVE | 2026-01-15 – 2027-01-14 |
-| `POL-PH-PRP-0005` | `claimant2@example.com` | PROPERTY | PH | ACTIVE | 2026-09-01 – 2027-08-31 |
-| `POL-VN-PRP-0006` | `claimant2@example.com` | PROPERTY | VN | ACTIVE, **expired** | 2023-10-01 – 2024-09-30 |
-| `POL-MY-PRP-0007` | `holder3@example.com` | PROPERTY | MY | ACTIVE — no account yet | 2026-04-01 – 2027-03-31 |
-| `POL-SG-MTR-0008` | `holder4@example.com` | MOTOR | SG | ACTIVE — no account yet | 2026-02-01 – 2027-01-31 |
-| `POL-TH-PRP-0009` | `holder5@example.com` | PROPERTY | TH | ACTIVE — no account yet | 2026-06-01 – 2027-05-31 |
-| `POL-VN-MTR-0010` | `holder6@example.com` | MOTOR | VN | **CANCELLED** (register fails) | 2026-01-01 – 2026-12-31 |
+| `POL-MY-MTR-0001` | `claimant1@example.com` | MOTOR | MY | ACTIVE | started 6 months ago |
+| `POL-SG-PRP-0002` | `claimant1@example.com` | PROPERTY | SG | ACTIVE | started 2 months ago |
+| `POL-TH-MTR-0003` | `claimant1@example.com` | MOTOR | TH | ACTIVE, **expired** | started 30 months ago, ended 18 months ago |
+| `POL-ID-MTR-0004` | `claimant2@example.com` | MOTOR | ID | ACTIVE | started 10 months ago |
+| `POL-PH-PRP-0005` | `claimant2@example.com` | PROPERTY | PH | ACTIVE | started 1 month ago |
+| `POL-VN-PRP-0006` | `claimant2@example.com` | PROPERTY | VN | ACTIVE, **expired** | started 3 years ago, ended 2 years ago |
+| `POL-MY-PRP-0007` | `holder3@example.com` | PROPERTY | MY | ACTIVE — no account yet | started 8 months ago |
+| `POL-SG-MTR-0008` | `holder4@example.com` | MOTOR | SG | ACTIVE — no account yet | started 4 months ago |
+| `POL-TH-PRP-0009` | `holder5@example.com` | PROPERTY | TH | ACTIVE — no account yet | started 5 months ago |
+| `POL-VN-MTR-0010` | `holder6@example.com` | MOTOR | VN | **CANCELLED** (register fails) | started 3 months ago |
 
 Sum insured and insured item (fake plate / address) are in
-`services/claims-service/src/main/resources/db/migration/V3__seed_policies.sql`.
+`services/claims-service/src/main/resources/db/migration/V3__seed_policies.sql`; dates in `V4__relative_policy_dates.sql`.

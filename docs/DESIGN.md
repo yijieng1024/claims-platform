@@ -1,6 +1,6 @@
-# Claims Platform — Architecture & Data Model (v0.8)
+# Claims Platform — Architecture & Data Model (v0.9)
 
-Status: **v0.8 - decisions agreed** (see section 14).
+Status: **v0.9 - decisions agreed** (see section 14).
 
 ---
 
@@ -387,7 +387,7 @@ Actions are separate endpoints (not one generic "PATCH status"), because each tr
   - Manager: **one simple dashboard page** — exposure cards per currency (reserved + not-yet-reserved), outstanding claims table by status and market, team workload table — plus All claims list and Team performance
 - Dashboards are deliberately simple: Angular Material cards and tables, **no charts**.
 - Team performance is a single table (one row per officer: closed, settled, rejected, average days to close).
-- UI: Angular Material. API client: generated from each service's OpenAPI spec with openapi-generator (Q4, Q5).
+- UI: Angular Material, **restyled to the design system in `docs/FRONTEND-DESIGN.md`** (glassmorphism, navy brand, light mode only). API client: generated from each service's OpenAPI spec with openapi-generator (Q4, Q5). Response fields that are always present are marked **required** in the OpenAPI spec, so the generated TypeScript types are non-optional where the backend guarantees a value.
 
 ---
 
@@ -470,6 +470,9 @@ Repo layout:
 | Q24 | Currencies with no open claims | Always return all six currencies, zeros included | Stable dashboard; "0" is explicit rather than missing. |
 | Q25 | Document upload details | First-byte check, UUID filenames, 20-file limit with row lock, 410 for missing files, orphan files documented | See §9. |
 | Q26 | Frontend delivery | Split into two briefs: foundation + claimant, then officer + manager + notifications | New to Angular; understand the foundation before building on it. |
+| Q27 | IDR display | IDR shown and entered without decimals (VND already 0) | Matches common practice. |
+| Q28 | Required fields in OpenAPI | Mark always-present response fields as required; regenerate the client | Otherwise every generated field is optional, which weakens "the contract is enforced by the build". |
+| Q29 | Visual design | Angular Material restyled to `docs/FRONTEND-DESIGN.md` (adapted from my PickWise design system); no dark mode | Default Material look was not good enough; a re-skin keeps the working components. |
 | Q6 | Markets | **MY, SG, TH, ID, PH, VN** (MYR, SGD, THB, IDR, PHP, VND) | Six Southeast Asian markets; illustrative only. |
 
 ### The three amounts on a claim

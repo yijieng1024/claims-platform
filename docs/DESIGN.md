@@ -1,6 +1,6 @@
-# Claims Platform — Architecture & Data Model (v0.2)
+# Claims Platform — Architecture & Data Model (v0.6)
 
-Status: **v0.2 - decisions agreed** (see section 14).
+Status: **v0.6 - decisions agreed** (see section 14).
 
 ---
 
@@ -10,7 +10,7 @@ One Angular app used by three roles:
 
 | Role | Can do |
 |---|---|
-| **Claimant** | Register / log in, report an incident (open a claim), track status and history, answer information requests (text + file upload), receive decisions as in-app notifications |
+| **Claimant** (existing policyholder) | Register (only with a valid policy number + matching email) / log in, see their policies, report an incident against one of their policies (open a claim), track status and history, answer information requests (text + file upload), receive decisions as in-app notifications |
 | **Officer** (claims staff) | See the queue of unassigned claims, pick up a claim, request more information, assess (set reserve), settle or reject, see team workload and performance |
 | **Manager** | Everything read-only an officer sees, plus outstanding claims overview and total liability exposure |
 
@@ -23,7 +23,7 @@ Three Spring Boot services in one Maven multi-module repo, plus the Angular fron
 | Service | Owns | Why it is separate |
 |---|---|---|
 | **auth-service** | Users, passwords, login, issuing JWTs | Both other services need to know "who is this and what role". One place issues identity; everyone else only verifies it. |
-| **claims-service** | Claims, status history, information requests, documents, outbox | This is where the business work happens. All writes to a claim go through here, so all claim rules live in one place. |
+| **claims-service** | Policies (simulated reference data), claims, status history, information requests, documents, outbox | This is where the business work happens. All writes to a claim go through here, so all claim rules live in one place. |
 | **reporting-service** | Read model for dashboards, notifications | Dashboards and notifications are *side effects* of claim changes. They can be a few seconds behind without hurting anyone, and they should never slow down or break a claimant submitting a claim. |
 
 **No API gateway.** In local dev, the Angular dev server proxies `/api/auth/**`, `/api/claims/**`, `/api/reports/**`, `/api/notifications/**` to the right service. This avoids CORS and avoids running one more service that adds nothing to the assessment. In production a gateway would sit here.
@@ -45,7 +45,8 @@ Migrations: Flyway, one migration folder per service.
 | Frontend → any service | REST | The user is waiting for an answer ("was my claim created?", "was my login correct?"). |
 | Officer changes a claim | REST to claims-service | The officer must know immediately if the action was rejected (e.g. invalid status change, someone else already picked it up). |
 | claims-service → reporting-service | **Kafka** (via outbox) | Reporting does not need to answer the officer. If reporting is down, claims must still work; it catches up when it comes back. |
-| claims / reporting → auth-service | REST, **once at startup** (fetch public key) | Token verification happens locally in each service, so auth-service being slow does not slow every request. |
+| claims / reporting → auth-service | REST, **on first need** (fetch public key, cached; re-fetched if an unknown key id appears) | Token verification happens locally in each service, so auth-service being slow does not slow every request, and claims/reporting can start before auth-service. |
+| auth-service → claims-service (register) | REST, internal endpoint | Registration must know **immediately** whether the policy number + email are real. |
 
 ### How the "async gap" is handled in the UI
 
@@ -60,9 +61,12 @@ Migrations: Flyway, one migration folder per service.
 - auth-service signs JWTs with an **RSA private key (RS256)**. It exposes the matching public key at `GET /.well-known/jwks.json`.
 - claims-service and reporting-service use Spring Security's **OAuth2 Resource Server** support, pointed at that JWKS URL. They can verify tokens but cannot create them.
   - Why RS256 instead of a shared secret (HS256): with a shared secret, every service that can verify a token can also forge one. With RS256, only auth-service holds the private key.
-- Token claims: `sub` (user id), `role`, `name`, `market` (staff only). Expiry: 1 hour.
+- Token claims: `sub` (user id), `role`, `name`, `email`, `market` (officers only — the claim is absent for other roles), `iss` (`http://localhost:8081`, checked by the other services). Expiry: 1 hour.
+- If a token can't be checked because auth-service is unreachable (key not yet fetched), services return **503** as ProblemDetail (not 500): the service isn't broken, a dependency is unavailable.
 - Passwords stored as BCrypt hashes.
-- Claimants self-register. Officers and managers are **seeded** by a Flyway migration (in a real company staff accounts are created by an admin, not self-registered).
+- **Claimants can only register if they are an existing policyholder**: the register request includes a `policyNumber`; auth-service asks claims-service whether that policy exists, is not cancelled, and its holder email matches the registering email. Wrong policy number and wrong email return the **same** error, so nobody can probe which policy numbers exist. One account per email; an account can see every policy whose holder email matches.
+- auth-service calls the internal verify endpoint with a **short-lived service token** it signs itself (role `SERVICE`, 1 minute). claims-service accepts `ROLE_SERVICE` only on `/internal/**`. No extra shared secret is needed.
+- Officers and managers are **seeded** by a Flyway migration (in a real company staff accounts are created by an admin, not self-registered).
 - No refresh token (documented as out of scope; user logs in again after 1 hour).
 
 ---
@@ -72,22 +76,32 @@ Migrations: Flyway, one migration folder per service.
 ```
                  pick up              request info
 SUBMITTED ──────────────► UNDER_REVIEW ──────────────► INFO_REQUESTED
-                              ▲   │                         │
-                              │   │  claimant responds      │
-                              │   └─────────◄───────────────┘
-                              │
-                              │ assess (set reserve)
-                              ▼
-                           ASSESSED ───── settle ─────► SETTLED   (closed)
-                              │
-           reject (from UNDER_REVIEW or ASSESSED) ─────► REJECTED (closed)
+                           │      ▲                      ▲     │
+                           │      └── claimant responds ─┼─────┘
+                           │                             │
+                           │ assess (set reserve)        │ request info
+                           ▼                             │
+                        ASSESSED ────────────────────────┘
+                           │
+                           ├──── settle ─────► SETTLED   (closed)
+                           │
+   reject (from UNDER_REVIEW or ASSESSED) ───► REJECTED  (closed)
 ```
 
-Rules:
-- Only the **assigned officer** can act on a claim after pick-up. Managers are read-only.
+Rules for opening a claim:
+- The claimant picks one of **their own** policies (holder email = their email).
+- The policy must not be cancelled, and the **incident date must fall between the policy start and end date**.
+- The incident date cannot be in the future.
+- Claim `type`, `market` and `currency` are **copied from the policy**, not chosen by the claimant.
+
+Rules after that:
+- Only the **assigned officer** can act on a claim after pick-up.
+- **Check order: permission first, then business rules.** Not your market → 404; not the assigned officer → 403; only then the state machine (409). Someone without rights gets no feedback about the claim's state. Managers are read-only.
 - Only the **claim owner** can respond to an information request.
-- `ASSESSED → UNDER_REVIEW` is allowed if the officer needs more info after assessing (they can then request info again). Reserve can be updated while the claim is open.
+- `ASSESSED → INFO_REQUESTED` is allowed: if the officer needs more information after assessing, they request it directly. When the claimant responds the claim goes back to `UNDER_REVIEW` and the officer assesses again (reserve can be updated). This avoids a separate "reopen" action.
 - `SETTLED` and `REJECTED` are terminal.
+- `reserve_amount` and `settled_amount` cannot exceed the policy's `sum_insured` (the maximum payable).
+- Officers can only see and act on claims in **their own market** (queue, assigned list and claim detail). Managers see all markets.
 - Every transition writes a row to `claim_status_history` and an event to the outbox, **in the same transaction**.
 - The transition rules live in one class (`ClaimStateMachine`) with unit tests for every allowed and every forbidden transition.
 - Invalid transition → HTTP **409 Conflict**.
@@ -112,6 +126,24 @@ Rules:
 
 ### 6.2 `claims` schema
 
+**policies** — simulated reference data. In a real company this comes from the policy administration system; here it is seeded by Flyway and read-only.
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | |
+| policy_number | varchar unique | e.g. `POL-MY-MTR-0001` |
+| holder_name | varchar | |
+| holder_email | varchar | lowercase; used for registration check and to find "my policies" |
+| product_type | varchar | `MOTOR` / `PROPERTY` |
+| market | varchar | |
+| currency | varchar(3) | |
+| insured_item | varchar | e.g. vehicle registration or property address (fake) |
+| sum_insured | numeric(15,2) | maximum payable |
+| start_date / end_date | date | cover period |
+| status | varchar | `ACTIVE` / `CANCELLED` (an expired policy is just one whose `end_date` has passed) |
+
+Seed dates are **relative to the day the database is first migrated** (e.g. start = today − 6 months), so the demo data does not expire. "Today" is the database date in UTC, not each market's local date — a known limitation (off by one day only around midnight).
+
+
 **claims**
 | Column | Type | Notes |
 |---|---|---|
@@ -119,9 +151,11 @@ Rules:
 | claim_number | varchar unique | human-readable, e.g. `CLM-2026-000123` |
 | claimant_id | uuid | user id from the JWT (no FK — different schema) |
 | claimant_name | varchar | copied at creation so we don't call auth-service to display it |
-| type | varchar | `MOTOR` / `PROPERTY` |
-| market | varchar | one of `MY, SG, TH, ID, PH, VN` |
-| currency | varchar(3) | derived from market, e.g. `MYR` |
+| policy_id | uuid FK → policies | |
+| policy_number | varchar | copied for display |
+| type | varchar | `MOTOR` / `PROPERTY` — copied from policy |
+| market | varchar | one of `MY, SG, TH, ID, PH, VN` — copied from policy |
+| currency | varchar(3) | copied from policy, e.g. `MYR` |
 | incident_date | date | |
 | incident_location | varchar | |
 | description | text | |
@@ -129,6 +163,7 @@ Rules:
 | status | varchar | see state machine |
 | assigned_officer_id | uuid null | |
 | assigned_officer_name | varchar null | |
+| assigned_at | timestamptz null | when an officer picked it up; part of the event snapshot |
 | reserve_amount | numeric(15,2) null | officer's estimate of what will be paid — drives exposure |
 | settled_amount | numeric(15,2) null | final paid amount |
 | rejection_reason | text null | |
@@ -240,11 +275,16 @@ Why one topic with claim id as key: Kafka only guarantees order inside one parti
   "eventType": "ClaimAssessed",
   "occurredAt": "2026-11-24T10:15:00Z",
   "actor": { "id": "uuid", "name": "Officer Lee", "role": "OFFICER" },
-  "claim": { "...full snapshot of the claim at this version, incl. version..." }
+  "claim": {
+    "id", "claimNumber", "version", "policyNumber", "type", "market", "currency",
+    "status", "claimantId", "assignedOfficerId", "assignedOfficerName",
+    "claimedAmount", "reserveAmount", "settledAmount",
+    "createdAt", "assignedAt", "closedAt"
+  }
 }
 ```
 
-Every event carries a **full snapshot** of the claim (not just "status changed to X"). Why: reporting just overwrites its row with the snapshot, so it never has to rebuild state from a chain of small changes, and a missed or duplicated event cannot leave it in a half-updated state.
+Every event carries a **complete snapshot of every claim field reporting needs** (not just "status changed to X"). Why: reporting just overwrites its row with the snapshot, so it never has to rebuild state from a chain of small changes, and a missed or duplicated event cannot leave it in a half-updated state.
 
 ### Outbox flow
 1. Inside the same DB transaction as the claim change: insert into `outbox_events` with status `PENDING`.
@@ -260,6 +300,10 @@ In one transaction:
 
 This makes the consumer **idempotent**: handling the same event twice gives the same result as once.
 
+**Personal data is kept off Kafka (data minimisation).** The snapshot leaves out the incident description, incident location and claimant name — reporting doesn't need them, and Kafka messages are retained and readable by any service with access to the topic. Consumers ignore unknown JSON fields so the event shape can grow without breaking them.
+
+**Poison messages:** an event that keeps failing is retried a few times, then sent to `claims.events.DLT` (dead-letter topic) so one bad message can't block the partition.
+
 ---
 
 ## 8. REST API
@@ -271,7 +315,7 @@ API docs: springdoc-openapi → Swagger UI on each service at `/swagger-ui.html`
 ### auth-service
 | Method | Path | Who |
 |---|---|---|
-| POST | `/api/auth/register` | public (creates a CLAIMANT) |
+| POST | `/api/auth/register` | public — `{ email, password, policyNumber }`; creates a CLAIMANT only if the policy check passes; the account name is taken from the policy holder name |
 | POST | `/api/auth/login` | public → returns JWT |
 | GET | `/api/auth/me` | any logged-in user |
 | GET | `/.well-known/jwks.json` | public (services fetch the key) |
@@ -281,12 +325,14 @@ Actions are separate endpoints (not one generic "PATCH status"), because each tr
 
 | Method | Path | Who |
 |---|---|---|
-| POST | `/api/claims` | claimant |
+| GET | `/api/policies/my` | claimant — policies whose holder email matches theirs |
+| POST | `/internal/policies/verify` | `ROLE_SERVICE` only — `{ policyNumber, email }` → match yes/no |
+| POST | `/api/claims` | claimant — `{ policyId, incidentDate, incidentLocation, description, claimedAmount }` |
 | GET | `/api/claims/my` | claimant |
 | GET | `/api/claims/queue` | officer — unassigned `SUBMITTED` claims in the officer's market |
 | GET | `/api/claims/assigned` | officer — my open claims |
 | GET | `/api/claims` | manager — all claims, filter by status/market |
-| GET | `/api/claims/{id}` | owner, any officer, manager |
+| GET | `/api/claims/{id}` | owner, officers of the claim's market, manager |
 | GET | `/api/claims/{id}/history` | same as above |
 | POST | `/api/claims/{id}/assign` | officer (assigns to self) |
 | POST | `/api/claims/{id}/information-requests` | assigned officer |
@@ -296,17 +342,16 @@ Actions are separate endpoints (not one generic "PATCH status"), because each tr
 | GET | `/api/claims/{id}/documents` | owner, officer, manager |
 | GET | `/api/claims/{id}/documents/{docId}/content` | owner, officer, manager |
 | POST | `/api/claims/{id}/assessment` | assigned officer — `{ reserveAmount, note }` |
-| POST | `/api/claims/{id}/reopen-review` | assigned officer — ASSESSED → UNDER_REVIEW |
 | POST | `/api/claims/{id}/settlement` | assigned officer — `{ settledAmount, note }` |
 | POST | `/api/claims/{id}/rejection` | assigned officer — `{ reason }` |
 
 ### reporting-service
 | Method | Path | Who |
 |---|---|---|
-| GET | `/api/reports/outstanding` | officer, manager — open claims by status and market |
+| GET | `/api/reports/outstanding` | officer (own market), manager (all) — open claims by status and market |
 | GET | `/api/reports/exposure` | manager — per currency: reserved exposure + not-yet-reserved count and claimed total (Q2, Q3) |
-| GET | `/api/reports/workload` | officer, manager — open claims per officer |
-| GET | `/api/reports/performance` | officer, manager — per officer: closed count, settled vs rejected, average days to close |
+| GET | `/api/reports/workload` | officer (own market), manager (all, filter by market) — open claims per officer |
+| GET | `/api/reports/performance` | officer (own market), manager (all, filter by market) — one row per officer: closed count, settled count, rejected count, average days from assigned to closed |
 | GET | `/api/notifications` | any logged-in user — my notifications |
 | POST | `/api/notifications/{id}/read` | owner |
 
@@ -329,7 +374,9 @@ Actions are separate endpoints (not one generic "PATCH status"), because each tr
   - Login / Register
   - Claimant: My claims · New claim · Claim detail (history, answer info request, upload files) · Notifications
   - Officer: Queue · My claims · Claim detail (actions: pick up, request info, assess, settle, reject; view/download documents) · Team workload & performance
-  - Manager: Outstanding & exposure dashboard · All claims list · Team performance
+  - Manager: **one simple dashboard page** — exposure cards per currency (reserved + not-yet-reserved), outstanding claims table by status and market, team workload table — plus All claims list and Team performance
+- Dashboards are deliberately simple: Angular Material cards and tables, **no charts**.
+- Team performance is a single table (one row per officer: closed, settled, rejected, average days to close).
 - UI: Angular Material. API client: generated from each service's OpenAPI spec with openapi-generator (Q4, Q5).
 
 ---
@@ -347,7 +394,7 @@ Actions are separate endpoints (not one generic "PATCH status"), because each tr
 
 ## 12. Running locally
 
-`docker compose up` starts: PostgreSQL, Kafka (**KRaft mode** — Kafka's built-in coordination, so no separate ZooKeeper container), the three services, and the frontend. Seeded accounts are listed in the README.
+`docker compose up` starts: PostgreSQL 18 (host port **5433**, because 5432 is often taken by a local install), Kafka (**KRaft mode** — Kafka's built-in coordination, so no separate ZooKeeper container), the three services, and the frontend. Seeded accounts are listed in the README.
 
 Repo layout:
 ```
@@ -355,12 +402,16 @@ Repo layout:
 /services/claims-service
 /services/reporting-service
 /libs/claims-events        # shared event classes (the Kafka contract)
+/libs/web-common           # shared resource-server security config + ProblemDetail error handling
+/infra/postgres            # DB init script (schemas + one DB user per service)
 /frontend                  # Angular
 /docs/DESIGN.md, /docs/DECISIONS.md
 /AI_JOURNAL.md
 /docker-compose.yml
 /README.md
 ```
+
+`libs/web-common` holds code that must be identical in every service (JWT resource-server setup, role mapping, ProblemDetail errors, 503 on key fetch failure). One copy means a fix can't be applied to one service and forgotten in another. Trade-off: services share a build dependency — acceptable in a monorepo.
 
 `libs/claims-events` is shared so producer and consumer can't drift apart on the event shape. Trade-off: it couples the two services' builds; in separate repos this would be a versioned schema (e.g. a schema registry) instead.
 
@@ -369,6 +420,8 @@ Repo layout:
 ## 13. Out of scope (documented, not built)
 
 - Refresh tokens, password reset, admin UI for staff accounts
+- Real integration with a policy administration system (policies are seeded reference data); policy changes / endorsements
+- Rate limiting on register/login
 - Object storage (S3), virus scanning of uploads
 - Email / SMS notifications (in-app only)
 - Real-time push (polling instead)
@@ -387,6 +440,20 @@ Repo layout:
 | Q3 | Claims without a reserve | Shown **separately**: "Exposure (reserved)" = sum of reserves of open claims; "Not yet reserved" = count + total claimed amount. Claimed amount is never added into exposure. | Claimed amounts are the claimant's number and are often high; mixing them in makes exposure unreliable. |
 | Q4 | Angular UI library | **Angular Material** | Ready-made tables, forms and dialogs; time goes into features, not CSS. |
 | Q5 | Frontend API types | **Generated from OpenAPI** with openapi-generator | Backend owns the contract; if the backend changes, the frontend build breaks instead of silently drifting. |
+| Q7 | More info needed after assessing | Allow `ASSESSED → INFO_REQUESTED` directly; no separate reopen action | One less endpoint and button, same outcome. |
+| Q8 | Dashboard depth | Manager dashboard and team performance are simple tables/cards, no charts | Kept inside the 5-hour cap; the numbers matter more than the visuals. |
+| Q9 | Who can register? | Only existing policyholders: policy number + matching email, checked by auth-service calling claims-service. Claims are opened against a policy, which supplies type, market and currency and must cover the incident date. | A non-customer registering makes no sense, and a claim without a policy has nothing to claim against. Policy was a missing core entity. |
+| Q10 | Duplicate security / error code across services | Shared `libs/web-common` module | Code that must be identical lives once. |
+| Q11 | Small changes from brief 01 | Public key fetched on first need; `iss` claim added and checked; `market` claim omitted for non-officers; 503 when auth-service unreachable; Postgres on host port 5433; **PostgreSQL 18** (Flyway is tested up to 18) | See sections 3, 4, 12. |
+| Q12 | Account name on register | Taken from the policy holder name; not typed by the user | The insurer's record is authoritative; officers see the same name as on the policy. |
+| Q13 | Seed policy dates | Relative to first migration date | Demo data never expires. |
+| Q14 | "Today" for policy cover | Database date (UTC) | Known limitation; only matters around midnight. |
+| Q15 | Officer visibility | Own market only, including claim detail | Follows from Q1. |
+| Q16 | Reserve limit | Reserve ≤ sum insured | Sum insured is the maximum payable. |
+| Q17 | Check order for actions | Permission (404/403) before state (409) | Someone without rights shouldn't learn the claim's status. Raised from Claude Code's brief 03 report. |
+| Q18 | Personal data in events | Event snapshot excludes description, incident location and claimant name | Data minimisation — reporting doesn't need them. Raised by Claude Code. |
+| Q19 | Where `assigned_at` comes from | New `claims.assigned_at` column, carried in every snapshot | Keeps "reporting can rebuild from any single event's snapshot" true. |
+| Q20 | Performance metric | Average days from **assigned to closed** per officer | Measures the officer's handling time, not time the claim waited in the queue. |
 | Q6 | Markets | **MY, SG, TH, ID, PH, VN** (MYR, SGD, THB, IDR, PHP, VND) | Six Southeast Asian markets; illustrative only. |
 
 ### The three amounts on a claim

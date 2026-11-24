@@ -20,6 +20,17 @@ spring:
   flyway:
     schemas: claims
     default-schema: claims
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      # key = claim id, value = the outbox JSON as stored (String serializers are Boot's default)
+      acks: all
+      properties:
+        enable.idempotence: true
+        # fail within seconds when Kafka is down, so one send never holds the outbox row locks for long
+        max.block.ms: 5000
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 10000
   security:
     oauth2:
       resourceserver:
@@ -32,3 +43,12 @@ spring:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+# Outbox publisher (design section 7). Producer settings are under spring.kafka.
+claims:
+  outbox:
+    publisher:
+      enabled: ${OUTBOX_PUBLISHER_ENABLED:true}
+      interval-ms: 1000
+      # longer than delivery.timeout.ms below, so Kafka's own error normally arrives first
+      send-timeout: 15s

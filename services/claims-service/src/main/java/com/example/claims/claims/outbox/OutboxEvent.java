@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-/** One row of the transactional outbox (design section 7): written PENDING, sent to Kafka later (brief 4). */
+/** One row of the transactional outbox (design section 7): written PENDING, sent by {@link OutboxPublisher}. */
 @Entity
 @Table(name = "outbox_events")
 public class OutboxEvent {
@@ -37,4 +37,19 @@ public class OutboxEvent {
         e.createdAt = now;
         return e;
     }
+
+    void markSent(Instant now) {
+        status = "SENT";
+        sentAt = now;
+    }
+
+    void failedAttempt() {
+        attempts++;
+    }
+
+    public UUID getId() { return id; }
+    public UUID getAggregateId() { return aggregateId; }
+    public String getEventType() { return eventType; }
+    public String getPayload() { return payload; }
+    public int getAttempts() { return attempts; }
 }

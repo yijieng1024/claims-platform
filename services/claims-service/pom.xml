@@ -40,6 +40,11 @@
             <groupId>com.example.claims</groupId>
             <artifactId>claims-events</artifactId>
         </dependency>
+        <!-- Kafka producer (KafkaTemplate) for the outbox publisher -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-kafka</artifactId>
+        </dependency>
         <!-- schema migrations -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -85,6 +90,12 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- real Kafka in Docker for the outbox publisher test -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-kafka</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

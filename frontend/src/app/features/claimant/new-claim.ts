@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatRadioModule } from '@angular/material/radio';
@@ -21,7 +22,7 @@ import { uploadFiles, UploadError } from './upload-files';
   selector: 'app-new-claim',
   imports: [
     ReactiveFormsModule, RouterLink, DatePipe, TitleCasePipe, MatButtonModule, MatCardModule, MatDatepickerModule,
-    MatFormFieldModule, MatInputModule, MatProgressBarModule, MatRadioModule, FilePicker,
+    MatFormFieldModule, MatIconModule, MatInputModule, MatProgressBarModule, MatRadioModule, FilePicker,
   ],
   templateUrl: './new-claim.html',
   styleUrl: './new-claim.scss',
@@ -45,7 +46,7 @@ export class NewClaim {
   });
 
   // toSignal turns the form control's stream of values into a signal, so computed() can react to it
-  private readonly policyId = toSignal(this.form.controls.policyId.valueChanges, { initialValue: '' });
+  readonly policyId = toSignal(this.form.controls.policyId.valueChanges, { initialValue: '' });
   readonly policy = computed(() => this.policies()?.find((p) => p.id === this.policyId()));
 
   // the incident date must be inside the policy's cover period and not in the future (design §5)

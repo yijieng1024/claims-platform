@@ -2,6 +2,8 @@ import { Component, inject, signal } from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { ClaimControllerService, ClaimSummary } from '../../api/claims';
@@ -11,12 +13,14 @@ import { StatusChip } from '../../shared/status-chip';
 
 @Component({
   selector: 'app-my-claims',
-  imports: [RouterLink, DatePipe, TitleCasePipe, MatButtonModule, MatTableModule, MatProgressBarModule, MoneyPipe, StatusChip],
+  imports: [RouterLink, DatePipe, TitleCasePipe, MatButtonModule, MatCardModule, MatIconModule, MatTableModule, MatProgressBarModule, MoneyPipe, StatusChip],
   templateUrl: './my-claims.html',
   styles: `
+    .header { margin-bottom: 16px; }
+    .header h1 { margin: 0; }
     tr.mat-mdc-row { cursor: pointer; }
-    tr.mat-mdc-row:hover { background: var(--mat-sys-surface-container); }
-    .empty { text-align: center; padding: 48px 0; }
+    .claim-link { font-weight: 600; text-decoration: none; }
+    .claim-link:hover { text-decoration: underline; }
   `,
 })
 export class MyClaims {

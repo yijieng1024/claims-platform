@@ -1,21 +1,68 @@
+mat-card {
+  margin-bottom: 16px;
+}
+
 .policies {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+// Policy tile: a canvas-coloured box with a hairline border; brand tint when selected
+.policy-tile {
+  display: block;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-field);
+  background: var(--bg);
+  transition: background-color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: var(--surface-2);
+  }
+
+  &.selected {
+    background: var(--brand-tint);
+    border-color: var(--brand);
+  }
+}
+
 .policy {
   padding: 4px 0;
+  line-height: 1.5;
 }
 
 .in-force {
-  color: #1b5e20;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--positive);
+  font-weight: 600;
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
 }
 
-.actions {
-  margin: 24px 0 8px;
+.fields {
+  align-items: flex-start;
 }
 
 .date-field {
   width: 320px; // room for the hint text
+}
+
+.amount-field {
+  width: 220px;
+}
+
+.optional {
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.actions {
+  margin: 8px 0;
 }

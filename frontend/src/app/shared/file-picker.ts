@@ -16,7 +16,8 @@ const ALLOWED = ['image/jpeg', 'image/png', 'application/pdf'];
   template: `
     <!-- the real <input type=file> is hidden; the Material button opens it -->
     <input #input type="file" multiple hidden accept=".jpg,.jpeg,.png,.pdf" (change)="add(input)" />
-    <button mat-stroked-button type="button" (click)="input.click()">
+    <!-- secondary (tonal) style: the page's primary action is its submit button -->
+    <button matButton="tonal" type="button" (click)="input.click()">
       <mat-icon>attach_file</mat-icon> Choose files
     </button>
     <span class="muted hint">JPEG, PNG or PDF, max 10 MB each</span>
@@ -28,7 +29,7 @@ const ALLOWED = ['image/jpeg', 'image/png', 'application/pdf'];
       <div class="file">
         <mat-icon>description</mat-icon>
         <span>{{ file.name }}</span>
-        <button mat-icon-button type="button" (click)="remove(file)" [attr.aria-label]="'Remove ' + file.name">
+        <button matIconButton type="button" (click)="remove(file)" [attr.aria-label]="'Remove ' + file.name">
           <mat-icon>close</mat-icon>
         </button>
       </div>
@@ -36,7 +37,18 @@ const ALLOWED = ['image/jpeg', 'image/png', 'application/pdf'];
   `,
   styles: `
     .hint { margin-left: 12px; font-size: 13px; }
-    .file { display: flex; align-items: center; gap: 8px; }
+    .file {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      padding: 2px 4px 2px 12px;
+      border-radius: var(--radius-field);
+      background: var(--surface-2);
+      max-width: 480px;
+    }
+    .file span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .error-text { margin-top: 6px; font-size: 12.5px; }
   `,
 })
 export class FilePicker {

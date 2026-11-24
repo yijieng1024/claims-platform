@@ -141,57 +141,77 @@ blockquote {
   }
 }
 
+// Horizontal timeline: one column per status change, joined by a line through the dots.
+.timeline-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px; // room for the scrollbar so it doesn't touch the notes
+
+  &:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: var(--radius-field);
+  }
+}
+
 .timeline {
+  display: flex;
   list-style: none;
   margin: 0;
-  padding: 0 0 0 4px;
+  padding: 0;
 
   li {
     position: relative;
-    padding: 0 0 18px 20px;
-    border-left: 2px solid var(--line);
+    flex: 1 0 180px; // share the width, but never narrower than 180px (then it scrolls)
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 0 16px 0 0;
 
-    &:last-child {
-      padding-bottom: 0;
-    }
-
-    // a dot on the line for each entry
+    // the connecting line, from this dot to the next one
     &::before {
       content: '';
       position: absolute;
-      left: -6px;
-      top: 4px;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--brand);
-      box-shadow: 0 0 0 3px var(--brand-tint);
+      top: 5px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--line);
+    }
+
+    &:last-child::before {
+      display: none;
     }
   }
 
-  .when {
+  .dot {
+    position: relative; // above the line
+    width: 12px;
+    height: 12px;
+    margin-bottom: 6px;
+    border-radius: 50%;
+    background: var(--surface-solid);
+    border: 2px solid var(--brand);
+    box-sizing: border-box;
+  }
+
+  // the claim's current status: filled dot with a soft ring
+  .current .dot {
+    background: var(--brand);
+    box-shadow: 0 0 0 4px var(--brand-tint);
+  }
+
+  .when,
+  .who {
     font-size: 12.5px;
-    margin-bottom: 4px;
-  }
-
-  .change {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .arrow {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    color: var(--text-muted);
   }
 
   .note {
-    margin-top: 6px;
+    margin-top: 2px;
     padding: 8px 12px;
     border-radius: var(--radius-field);
     background: var(--surface-2);
+    font-size: 13px;
+    max-width: 260px;
   }
 }

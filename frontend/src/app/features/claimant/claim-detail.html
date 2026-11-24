@@ -14,6 +14,30 @@
       </p>
     </div>
 
+    <!-- Timeline: status changes left to right, oldest first (the backend's order).
+         Each step shows the status the claim moved to; the previous step is where it came from. -->
+    <mat-card appearance="outlined">
+      <div class="card-body">
+        <h3>Timeline</h3>
+        <!-- scrolls sideways when there are more steps than fit; tabindex lets keyboard users scroll it -->
+        <div class="timeline-scroll" tabindex="0" role="region" aria-label="Claim timeline">
+          <ol class="timeline">
+            @for (h of data()!.history; track $index; let last = $last) {
+              <li [class.current]="last">
+                <span class="dot" aria-hidden="true"></span>
+                <app-status-chip [status]="h.toStatus" />
+                <div class="when muted num">{{ h.changedAt | date: 'medium' }}</div>
+                <div class="who muted">by {{ h.changedByName }} ({{ h.changedByRole | titlecase }})</div>
+                @if (h.note) {
+                  <div class="pre note">{{ h.note }}</div>
+                }
+              </li>
+            }
+          </ol>
+        </div>
+      </div>
+    </mat-card>
+
     <!-- Amounts and incident -->
     <mat-card appearance="outlined">
       <div class="card-body">
@@ -112,31 +136,6 @@
     @if (busy()) {
       <mat-progress-bar mode="indeterminate" />
     }
-
-    <!-- Status history, oldest first (the backend's order) -->
-    <mat-card appearance="outlined">
-      <div class="card-body">
-        <h3>History</h3>
-        <ol class="timeline">
-          @for (h of data()!.history; track $index) {
-            <li>
-              <div class="when muted num">{{ h.changedAt | date: 'medium' }}</div>
-              <div class="change">
-                @if (h.fromStatus) {
-                  <app-status-chip [status]="h.fromStatus" />
-                  <mat-icon class="arrow" aria-label="changed to">arrow_forward</mat-icon>
-                }
-                <app-status-chip [status]="h.toStatus" />
-                <span class="muted">by {{ h.changedByName }} ({{ h.changedByRole | titlecase }})</span>
-              </div>
-              @if (h.note) {
-                <div class="pre note">{{ h.note }}</div>
-              }
-            </li>
-          }
-        </ol>
-      </div>
-    </mat-card>
   } @else {
     <mat-progress-bar mode="indeterminate" />
   }

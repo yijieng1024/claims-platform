@@ -12,4 +12,20 @@
     </parent>
 
     <artifactId>claims-events</artifactId>
+    <description>Kafka event contract between claims-service and reporting-service: plain records, no Kafka or Spring dependency</description>
+
+    <dependencies>
+        <!-- JUnit + AssertJ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- checks the JSON shape the services will produce with Boot's Jackson -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

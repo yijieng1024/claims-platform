@@ -1,6 +1,6 @@
-# Claims Platform — Architecture & Data Model (v0.6)
+# Claims Platform — Architecture & Data Model (v0.7)
 
-Status: **v0.6 - decisions agreed** (see section 14).
+Status: **v0.7 - decisions agreed** (see section 14).
 
 ---
 
@@ -51,7 +51,7 @@ Migrations: Flyway, one migration folder per service.
 ### How the "async gap" is handled in the UI
 
 - After any action, the UI re-reads the claim from **claims-service** → always up to date.
-- Dashboards come from **reporting-service** → may be a few seconds behind. Each dashboard response includes `asOf` (time of the last processed event) and the UI shows "Last updated …".
+- Dashboards come from **reporting-service** → may be a few seconds behind. Each dashboard response includes `asOf` = the latest `occurredAt` of the events reflected in the numbers (when the newest included claim change happened, not when reporting processed it), and the UI shows "Includes changes up to …". If reporting falls behind, this time stays old instead of falsely looking fresh.
 - Notifications: the UI polls `GET /api/notifications` every ~15 seconds. (Server-Sent Events / WebSocket would be the upgrade; out of scope.)
 
 ---
@@ -229,7 +229,8 @@ Only one `OPEN` request per claim at a time (simpler UI, matches the `INFO_REQUE
 | assigned_officer_id, assigned_officer_name | |
 | claimed_amount, reserve_amount, settled_amount | |
 | submitted_at, assigned_at, closed_at | |
-| claim_version | last applied claim version — older events are ignored |
+| claim_version | last applied claim version — older events don't overwrite the summary |
+| last_event_at | `occurredAt` of the event that last updated this row (used for `asOf`) |
 | updated_at | |
 
 **notifications**
@@ -300,6 +301,10 @@ In one transaction:
 
 This makes the consumer **idempotent**: handling the same event twice gives the same result as once.
 
+The version check only decides whether the **summary** is overwritten. **Notifications are per event**: an event older than the stored version still creates its notification (duplicates are still stopped by `processed_events`). So even if events arrive out of order, nobody misses a notification.
+
+**Known limitation — multiple publisher instances:** with one claims-service instance, events for a claim are published in order. With several instances, `SKIP LOCKED` lets two instances publish two events of the same claim concurrently, so they can arrive out of order. The summary stays correct (version check) and notifications are not lost (above), but strict ordering would need per-claim locking in the publisher. Out of scope: we run one instance.
+
 **Personal data is kept off Kafka (data minimisation).** The snapshot leaves out the incident description, incident location and claimant name — reporting doesn't need them, and Kafka messages are retained and readable by any service with access to the topic. Consumers ignore unknown JSON fields so the event shape can grow without breaking them.
 
 **Poison messages:** an event that keeps failing is retried a few times, then sent to `claims.events.DLT` (dead-letter topic) so one bad message can't block the partition.
@@ -349,7 +354,7 @@ Actions are separate endpoints (not one generic "PATCH status"), because each tr
 | Method | Path | Who |
 |---|---|---|
 | GET | `/api/reports/outstanding` | officer (own market), manager (all) — open claims by status and market |
-| GET | `/api/reports/exposure` | manager — per currency: reserved exposure + not-yet-reserved count and claimed total (Q2, Q3) |
+| GET | `/api/reports/exposure` | manager — **all six currencies, always** (zeros when nothing is open): reserved exposure + not-yet-reserved count and claimed total (Q2, Q3) |
 | GET | `/api/reports/workload` | officer (own market), manager (all, filter by market) — open claims per officer |
 | GET | `/api/reports/performance` | officer (own market), manager (all, filter by market) — one row per officer: closed count, settled count, rejected count, average days from assigned to closed |
 | GET | `/api/notifications` | any logged-in user — my notifications |
@@ -454,6 +459,10 @@ Repo layout:
 | Q18 | Personal data in events | Event snapshot excludes description, incident location and claimant name | Data minimisation — reporting doesn't need them. Raised by Claude Code. |
 | Q19 | Where `assigned_at` comes from | New `claims.assigned_at` column, carried in every snapshot | Keeps "reporting can rebuild from any single event's snapshot" true. |
 | Q20 | Performance metric | Average days from **assigned to closed** per officer | Measures the officer's handling time, not time the claim waited in the queue. |
+| Q21 | `asOf` on dashboards | Latest event `occurredAt` reflected, not processing time | Doesn't look fresh when reporting is behind. |
+| Q22 | Notifications vs version check | Notifications created per event regardless of version; version check only guards the summary | No lost notifications if events arrive out of order. |
+| Q23 | Multi-instance ordering | Documented known limitation; one instance in scope | Raised by Claude Code. |
+| Q24 | Currencies with no open claims | Always return all six currencies, zeros included | Stable dashboard; "0" is explicit rather than missing. |
 | Q6 | Markets | **MY, SG, TH, ID, PH, VN** (MYR, SGD, THB, IDR, PHP, VND) | Six Southeast Asian markets; illustrative only. |
 
 ### The three amounts on a claim

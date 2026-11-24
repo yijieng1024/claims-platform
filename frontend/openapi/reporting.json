@@ -1,0 +1,398 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "reporting-service",
+    "version": "v1"
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "paths": {
+    "/api/notifications/{id}/read": {
+      "post": {
+        "tags": [
+          "notification-controller"
+        ],
+        "summary": "Mark one of my notifications as read (404 if it isn't mine)",
+        "operationId": "markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/reports/workload": {
+      "get": {
+        "tags": [
+          "report-controller"
+        ],
+        "summary": "Open claims per officer, by status (officer: own market; manager: all or ?market=)",
+        "operationId": "workload",
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workload"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/performance": {
+      "get": {
+        "tags": [
+          "report-controller"
+        ],
+        "summary": "Closed claims per officer and average days assigned to closed (officer: own market; manager: all or ?market=)",
+        "operationId": "performance",
+        "parameters": [
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Performance"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/outstanding": {
+      "get": {
+        "tags": [
+          "report-controller"
+        ],
+        "summary": "Open claim counts by status and by market (officer: own market)",
+        "operationId": "outstanding",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Outstanding"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/exposure": {
+      "get": {
+        "tags": [
+          "report-controller"
+        ],
+        "summary": "Manager: per currency, reserves of open claims, and open claims without a reserve",
+        "operationId": "exposure",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Exposure"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "notification-controller"
+        ],
+        "summary": "My notifications: unread first, newest first, at most 50",
+        "operationId": "mine",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OfficerWorkload": {
+        "type": "object",
+        "properties": {
+          "officerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "officerName": {
+            "type": "string"
+          },
+          "market": {
+            "type": "string"
+          },
+          "openClaims": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "underReview": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "infoRequested": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "assessed": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Workload": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "officers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfficerWorkload"
+            }
+          }
+        }
+      },
+      "Amount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      },
+      "OfficerPerformance": {
+        "type": "object",
+        "properties": {
+          "officerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "officerName": {
+            "type": "string"
+          },
+          "market": {
+            "type": "string"
+          },
+          "closed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "settled": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rejected": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "averageDaysToClose": {
+            "type": "number"
+          },
+          "settledAmounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Amount"
+            }
+          }
+        }
+      },
+      "Performance": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "officers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfficerPerformance"
+            }
+          }
+        }
+      },
+      "MarketCount": {
+        "type": "object",
+        "properties": {
+          "market": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Outstanding": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "byStatus": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatusCount"
+            }
+          },
+          "byMarket": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarketCount"
+            }
+          }
+        }
+      },
+      "StatusCount": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CurrencyExposure": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "reservedExposure": {
+            "type": "number"
+          },
+          "reservedCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "unreservedCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "unreservedClaimedAmount": {
+            "type": "number"
+          }
+        }
+      },
+      "Exposure": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CurrencyExposure"
+            }
+          }
+        }
+      },
+      "NotificationView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "claimId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "claimNumber": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

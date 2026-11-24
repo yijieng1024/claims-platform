@@ -42,3 +42,8 @@
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--glass-edge);
 }
+
+// Required-field asterisk in the error colour, so required fields stand out. No form-field token for it.
+.mat-mdc-form-field-required-marker {
+  color: var(--negative);
+}

@@ -37,6 +37,7 @@ public class Claim {
     private ClaimStatus status;
     private UUID assignedOfficerId;
     private String assignedOfficerName;
+    private Instant assignedAt;
     private BigDecimal reserveAmount;
     private BigDecimal settledAmount;
     private String rejectionReason;
@@ -76,6 +77,7 @@ public class Claim {
         move(Action.ASSIGN, now);
         assignedOfficerId = officer.id();
         assignedOfficerName = officer.name();
+        assignedAt = now;
     }
 
     void requestInformation(Instant now) {
@@ -113,7 +115,7 @@ public class Claim {
         return new ClaimSnapshot(id, claimNumber, version, claimantId, claimantName, policyId, policyNumber, type,
                 market, currency, incidentDate, incidentLocation, description, claimedAmount, reserveAmount,
                 settledAmount, status.name(), assignedOfficerId, assignedOfficerName, rejectionReason, createdAt,
-                updatedAt, closedAt);
+                updatedAt, assignedAt, closedAt);
     }
 
     public UUID getId() { return id; }
@@ -132,6 +134,7 @@ public class Claim {
     public ClaimStatus getStatus() { return status; }
     public UUID getAssignedOfficerId() { return assignedOfficerId; }
     public String getAssignedOfficerName() { return assignedOfficerName; }
+    public Instant getAssignedAt() { return assignedAt; }
     public BigDecimal getReserveAmount() { return reserveAmount; }
     public BigDecimal getSettledAmount() { return settledAmount; }
     public String getRejectionReason() { return rejectionReason; }

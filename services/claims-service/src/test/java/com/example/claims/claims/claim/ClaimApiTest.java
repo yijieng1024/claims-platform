@@ -92,8 +92,15 @@ class ClaimApiTest {
         action(OFFICER_MY1, id, "assign", null)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("UNDER_REVIEW"))
-                .andExpect(jsonPath("$.assignedOfficerName").value("Demo Officer MY-1"));
+                .andExpect(jsonPath("$.assignedOfficerName").value("Demo Officer MY-1"))
+                .andExpect(jsonPath("$.assignedAt").isNotEmpty());
         expectOutbox(id, 2, "ClaimAssigned", 1);
+        // Q19: assigned_at is stored and carried in the snapshot
+        assertThat(jdbc.sql("""
+                        SELECT (payload->'claim'->>'assignedAt')::timestamptz = c.assigned_at
+                        FROM outbox_events o JOIN claims c ON c.id = o.aggregate_id
+                        WHERE o.aggregate_id = ?::uuid AND o.event_type = 'ClaimAssigned'""")
+                .param(id).query(Boolean.class).single()).isTrue();
         mvc.perform(get("/api/claims/queue").with(OFFICER_MY1)).andExpect(jsonPath("$[*].id", not(hasItem(id))));
         mvc.perform(get("/api/claims/assigned").with(OFFICER_MY1)).andExpect(jsonPath("$[*].id", hasItem(id)));
 

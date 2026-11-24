@@ -32,5 +32,6 @@ public record ClaimSnapshot(
         String rejectionReason,
         Instant createdAt,
         Instant updatedAt,
+        Instant assignedAt,
         Instant closedAt) {
 }

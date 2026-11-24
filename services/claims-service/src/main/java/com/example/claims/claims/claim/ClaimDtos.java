@@ -64,15 +64,16 @@ final class ClaimDtos {
             String policyNumber, BigDecimal sumInsured, String type, String market, String currency,
             LocalDate incidentDate, String incidentLocation, String description, BigDecimal claimedAmount,
             BigDecimal reserveAmount, BigDecimal settledAmount, String rejectionReason, UUID claimantId,
-            String claimantName, UUID assignedOfficerId, String assignedOfficerName, Instant createdAt,
-            Instant updatedAt, Instant closedAt, InformationRequestView openInformationRequest) {
+            String claimantName, UUID assignedOfficerId, String assignedOfficerName, Instant assignedAt,
+            Instant createdAt, Instant updatedAt, Instant closedAt, InformationRequestView openInformationRequest) {
 
         static ClaimDetail of(Claim c, BigDecimal sumInsured, InformationRequestView openRequest) {
             return new ClaimDetail(c.getId(), c.getClaimNumber(), c.getVersion(), c.getStatus(), c.getPolicyId(),
                     c.getPolicyNumber(), sumInsured, c.getType(), c.getMarket(), c.getCurrency(), c.getIncidentDate(),
                     c.getIncidentLocation(), c.getDescription(), c.getClaimedAmount(), c.getReserveAmount(),
                     c.getSettledAmount(), c.getRejectionReason(), c.getClaimantId(), c.getClaimantName(),
-                    c.getAssignedOfficerId(), c.getAssignedOfficerName(), c.getCreatedAt(), c.getUpdatedAt(),
+                    c.getAssignedOfficerId(), c.getAssignedOfficerName(), c.getAssignedAt(), c.getCreatedAt(),
+                    c.getUpdatedAt(),
                     c.getClosedAt(), openRequest);
         }
     }

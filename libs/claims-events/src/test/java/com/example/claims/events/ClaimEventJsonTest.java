@@ -20,7 +20,7 @@ class ClaimEventJsonTest {
         var claim = new ClaimSnapshot(UUID.randomUUID(), "CLM-2026-000001", 3, UUID.randomUUID(), "Demo Claimant 1",
                 UUID.randomUUID(), "POL-MY-MTR-0001", "MOTOR", "MY", "MYR", LocalDate.parse("2026-11-01"), "KL",
                 "Rear-ended", new BigDecimal("1200.50"), new BigDecimal("1000.00"), null, "ASSESSED",
-                UUID.randomUUID(), "Officer Lee", null, now, now, null);
+                UUID.randomUUID(), "Officer Lee", null, now, now, now, null);
         var event = new ClaimEvent(UUID.randomUUID(), ClaimEventType.ClaimAssessed, now,
                 new ClaimEvent.Actor(UUID.randomUUID(), "Officer Lee", "OFFICER"), claim);
 

@@ -263,6 +263,12 @@ class ClaimApiTest {
         action(OFFICER_MY2, id, "assessment", "{\"reserveAmount\":100}")
                 .andExpect(status().isForbidden())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        // permission before state (Q17): settling an UNDER_REVIEW claim is invalid, but a non-assigned
+        // officer is told 403 (not 409), and another market's officer 404 — neither learns the status
+        action(OFFICER_MY2, id, "settlement", "{\"settledAmount\":100}")
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.currentStatus").doesNotExist());
+        action(OFFICER_SG1, id, "settlement", "{\"settledAmount\":100}").andExpect(status().isNotFound());
 
         String requestId = JsonPath.read(action(OFFICER_MY1, id, "information-requests", "{\"question\":\"Q?\"}")
                 .andReturn().getResponse().getContentAsString(), "$.openInformationRequest.id");

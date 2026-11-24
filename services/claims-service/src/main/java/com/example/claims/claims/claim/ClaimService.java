@@ -36,6 +36,7 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>
  * Visibility: claimants see their own claims, officers their market's, managers all. Anything else is a
  * 404, so nobody learns that a claim exists. Officers acting on a claim they can see but don't own: 403.
+ * Permission is always checked before the claim's status (Q17).
  */
 @Service
 @Transactional
@@ -218,13 +219,17 @@ class ClaimService {
                 .orElseThrow(() -> notFound("Claim not found"));
     }
 
-    /** Status is checked first (409), then that this officer picked the claim up (403). */
+    /**
+     * Permission before state (Q17): not your market 404, not your claim 403, and only then the status
+     * check (409), so someone without rights learns nothing about the claim's state. The status is
+     * checked here, before amount validation, so a wrong-status request is a 409 rather than a 400.
+     */
     private Claim forAssignedOfficer(UUID claimId, Caller officer, Action action) {
         Claim claim = visible(claimId, officer);
-        ClaimStateMachine.next(claim.getStatus(), action);
         if (!officer.id().equals(claim.getAssignedOfficerId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the officer assigned to this claim can do this");
         }
+        ClaimStateMachine.next(claim.getStatus(), action);
         return claim;
     }
 

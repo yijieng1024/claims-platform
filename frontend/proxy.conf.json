@@ -1,0 +1,7 @@
+{
+  "/api/auth": { "target": "http://localhost:8081", "secure": false },
+  "/api/claims": { "target": "http://localhost:8082", "secure": false },
+  "/api/policies": { "target": "http://localhost:8082", "secure": false },
+  "/api/reports": { "target": "http://localhost:8083", "secure": false },
+  "/api/notifications": { "target": "http://localhost:8083", "secure": false }
+}

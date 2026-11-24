@@ -2,36 +2,32 @@ package com.example.claims.events;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * The whole claim as it is after the event, so a consumer can overwrite its copy instead of replaying
- * changes. Enum-like fields are strings so this module doesn't depend on claims-service types.
+ * Every claim field reporting needs, as it is after the event, so a consumer can overwrite its copy
+ * instead of replaying changes. Exactly the design section 7 list: no description, incident location or
+ * claimant name (Q18, personal data stays off Kafka). Enum-like fields are strings so this module
+ * doesn't depend on claims-service types.
+ * <p>
+ * Consumers must ignore unknown JSON fields, so fields can be added without breaking them.
  */
 public record ClaimSnapshot(
         UUID id,
         String claimNumber,
         long version,
-        UUID claimantId,
-        String claimantName,
-        UUID policyId,
         String policyNumber,
         String type,
         String market,
         String currency,
-        LocalDate incidentDate,
-        String incidentLocation,
-        String description,
+        String status,
+        UUID claimantId,
+        UUID assignedOfficerId,
+        String assignedOfficerName,
         BigDecimal claimedAmount,
         BigDecimal reserveAmount,
         BigDecimal settledAmount,
-        String status,
-        UUID assignedOfficerId,
-        String assignedOfficerName,
-        String rejectionReason,
         Instant createdAt,
-        Instant updatedAt,
         Instant assignedAt,
         Instant closedAt) {
 }

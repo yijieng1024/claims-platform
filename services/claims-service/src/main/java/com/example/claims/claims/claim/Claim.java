@@ -112,10 +112,9 @@ public class Claim {
     }
 
     ClaimSnapshot toSnapshot() {
-        return new ClaimSnapshot(id, claimNumber, version, claimantId, claimantName, policyId, policyNumber, type,
-                market, currency, incidentDate, incidentLocation, description, claimedAmount, reserveAmount,
-                settledAmount, status.name(), assignedOfficerId, assignedOfficerName, rejectionReason, createdAt,
-                updatedAt, assignedAt, closedAt);
+        return new ClaimSnapshot(id, claimNumber, version, policyNumber, type, market, currency, status.name(),
+                claimantId, assignedOfficerId, assignedOfficerName, claimedAmount, reserveAmount, settledAmount,
+                createdAt, assignedAt, closedAt);
     }
 
     public UUID getId() { return id; }

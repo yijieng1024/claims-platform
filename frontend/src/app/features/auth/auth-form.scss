@@ -1,0 +1,21 @@
+.auth-page {
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+mat-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+form {
+  margin-top: 16px;
+}
+
+.message {
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}

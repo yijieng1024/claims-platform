@@ -1,1 +1,20 @@
+<mat-toolbar color="primary">
+  <a class="brand" routerLink="/">Claims Platform</a>
+
+  <!-- navigation links depend on the role; officer/manager links arrive with their screens (brief 6b) -->
+  @switch (auth.role()) {
+    @case ('CLAIMANT') {
+      <a mat-button routerLink="/claims" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">My claims</a>
+      <a mat-button routerLink="/claims/new" routerLinkActive="active">Report an incident</a>
+    }
+  }
+
+  <span class="spacer"></span>
+
+  @if (auth.user(); as user) {
+    <span class="who">{{ user.name }} · {{ user.role | titlecase }}</span>
+    <button mat-button (click)="auth.logout()">Log out</button>
+  }
+</mat-toolbar>
+
 <router-outlet />

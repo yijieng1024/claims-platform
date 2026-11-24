@@ -52,3 +52,6 @@ claims:
       interval-ms: 1000
       # longer than delivery.timeout.ms below, so Kafka's own error normally arrives first
       send-timeout: 15s
+  # uploaded claim documents, {root}/{claimId}/{uuid}; ./data is git-ignored (design section 9)
+  documents:
+    root: ${DOCUMENTS_ROOT:./data/uploads}

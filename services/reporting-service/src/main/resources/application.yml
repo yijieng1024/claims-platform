@@ -44,3 +44,8 @@ spring:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+  # controllers don't declare "produces", so without this every response is documented as */*, and the
+  # generated frontend client would then read JSON responses as binary blobs
+  default-produces-media-type: application/json
+  # /error is the internal error page (libs/web-common ErrorPageController), not an API
+  paths-to-exclude: /error

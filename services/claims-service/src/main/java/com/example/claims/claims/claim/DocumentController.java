@@ -4,6 +4,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.example.claims.claims.claim.ClaimDtos.DocumentView;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.core.io.InputStreamResource;
@@ -49,6 +52,9 @@ class DocumentController {
     }
 
     @Operation(summary = "Download a document (same access as the list)")
+    // documented as binary so the generated client downloads a Blob (the real type is the stored JPEG/PNG/PDF type)
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+            schema = @Schema(type = "string", format = "binary")))
     @GetMapping("/{documentId}/content")
     ResponseEntity<InputStreamResource> content(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
             @PathVariable UUID documentId) {

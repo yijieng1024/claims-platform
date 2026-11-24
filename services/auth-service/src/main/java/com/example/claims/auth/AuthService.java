@@ -58,10 +58,10 @@ class AuthService {
         if (users.existsByEmail(email)) {
             throw emailTaken();
         }
-        if (!policyCheck.matches(request.policyNumber().trim(), email)) { // 503 if claims-service can't answer
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, POLICY_NOT_VERIFIED);
-        }
-        var user = User.newClaimant(email, passwordEncoder.encode(request.password()), request.name().trim());
+        // 503 if claims-service can't answer; the account name is the policy holder name (Q12)
+        String holderName = policyCheck.holderName(request.policyNumber().trim(), email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, POLICY_NOT_VERIFIED));
+        var user = User.newClaimant(email, passwordEncoder.encode(request.password()), holderName);
         try {
             return UserResponse.of(users.saveAndFlush(user));
         } catch (DataIntegrityViolationException e) {

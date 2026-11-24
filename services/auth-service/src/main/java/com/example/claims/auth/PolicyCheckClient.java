@@ -2,6 +2,7 @@ package com.example.claims.auth;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,8 +52,8 @@ class PolicyCheckClient {
         this.issuer = issuer;
     }
 
-    /** True if the policy exists, isn't cancelled and is held by this email. 503 if claims-service can't say. */
-    boolean matches(String policyNumber, String email) {
+    /** Holder name if the policy exists, isn't cancelled and is held by this email. 503 if claims-service can't say. */
+    Optional<String> holderName(String policyNumber, String email) {
         try {
             VerifyResponse response = restClient.post()
                     .uri("/internal/policies/verify")
@@ -60,7 +61,7 @@ class PolicyCheckClient {
                     .body(new VerifyRequest(policyNumber, email))
                     .retrieve() // 4xx/5xx throw RestClientException
                     .body(VerifyResponse.class);
-            return response != null && response.match();
+            return response != null && response.match() ? Optional.ofNullable(response.holderName()) : Optional.empty();
         } catch (RestClientException e) {
             // down, timed out or answered with an error: not the user's fault, and no account is created
             log.warn("Policy check against claims-service failed: {}", e.toString());

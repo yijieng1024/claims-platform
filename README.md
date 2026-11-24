@@ -35,6 +35,9 @@ Claimants can only register with a policy number whose holder email matches the 
 with (design section 4). Expired policies still allow registration; cancelled ones don't. Every
 failure gives the same message.
 
+Register body: `{ "email", "password", "policyNumber" }`. The account name is the policy's holder
+name (a `name` field, if sent, is ignored).
+
 | Policy number | Holder email | Type | Market | Status | Cover |
 |---|---|---|---|---|---|
 | `POL-MY-MTR-0001` | `claimant1@example.com` | MOTOR | MY | ACTIVE | 2026-03-01 – 2027-02-28 |

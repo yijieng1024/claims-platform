@@ -105,7 +105,7 @@ class AuthApiTest {
         mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(email))
-                .andExpect(jsonPath("$.name").value("Test Person"))
+                .andExpect(jsonPath("$.name").value("Demo Holder")) // from the policy, not the request
                 .andExpect(jsonPath("$.market").isEmpty());
     }
 
@@ -170,12 +170,13 @@ class AuthApiTest {
     }
 
     @Test
-    void registerIgnoresRoleInBody() throws Exception {
+    void registerIgnoresRoleAndNameInBody() throws Exception {
         String email = uniqueEmail();
         register("{\"email\":\"%s\",\"password\":\"secret-pass\",\"name\":\"Sneaky\",\"policyNumber\":\"POL-MY-PRP-0007\",\"role\":\"OFFICER\",\"market\":\"MY\"}"
                 .formatted(email))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.role").value("CLAIMANT"))
+                .andExpect(jsonPath("$.name").value("Demo Holder"))
                 .andExpect(jsonPath("$.market").isEmpty());
 
         login(email, "secret-pass").andExpect(jsonPath("$.user.role").value("CLAIMANT"));
@@ -183,12 +184,11 @@ class AuthApiTest {
 
     @Test
     void invalidRegistrationIsProblemDetailWithFieldErrors() throws Exception {
-        register("{\"email\":\"not-an-email\",\"password\":\"short\",\"name\":\"\"}")
+        register("{\"email\":\"not-an-email\",\"password\":\"short\"}")
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.errors.email").exists())
                 .andExpect(jsonPath("$.errors.password").exists())
-                .andExpect(jsonPath("$.errors.name").exists())
                 .andExpect(jsonPath("$.errors.policyNumber").exists());
         assertThat(claimsCalls.get()).isZero();
     }
@@ -210,7 +210,7 @@ class AuthApiTest {
     }
 
     private static String body(String email, String policyNumber) {
-        return "{\"email\":\"%s\",\"password\":\"secret-pass\",\"name\":\"Test Person\",\"policyNumber\":\"%s\"}"
+        return "{\"email\":\"%s\",\"password\":\"secret-pass\",\"policyNumber\":\"%s\"}"
                 .formatted(email, policyNumber);
     }
 

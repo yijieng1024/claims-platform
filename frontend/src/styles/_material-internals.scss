@@ -25,6 +25,17 @@
   background: var(--surface-2);
 }
 
+// Line the first/last column up with the card padding (24px, .card-body). Cell padding has no token.
+.table-card .mat-mdc-header-cell:first-child,
+.table-card .mat-mdc-cell:first-child {
+  padding-left: 24px;
+}
+
+.table-card .mat-mdc-header-cell:last-child,
+.table-card .mat-mdc-cell:last-child {
+  padding-right: 24px;
+}
+
 // Menus are glass overlays (§5). The colour comes from the menu token; the blur has no token.
 .mat-mdc-menu-panel {
   backdrop-filter: blur(20px) saturate(180%);

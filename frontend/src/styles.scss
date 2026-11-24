@@ -105,6 +105,11 @@ a:focus-visible,
   font-variant-numeric: tabular-nums;
 }
 
+// Room under each form field for its hint/error line, so it never touches the next field's label
+mat-form-field {
+  margin-bottom: 8px;
+}
+
 // Cards hold body content (§5). Padding for cards that aren't using mat-card-content.
 .card-body {
   padding: 20px 24px;

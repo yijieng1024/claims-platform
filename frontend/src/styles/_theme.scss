@@ -56,6 +56,11 @@
       tonal-container-color: var(--brand-tint),
       tonal-label-text-color: var(--brand),
       text-label-text-color: var(--brand),
+      // disabled = the same colours at 60% opacity (§7), not Material's default grey
+      filled-disabled-container-color: color-mix(in srgb, var(--brand) 60%, transparent),
+      filled-disabled-label-text-color: color-mix(in srgb, var(--on-brand) 60%, transparent),
+      tonal-disabled-container-color: color-mix(in srgb, var(--brand-tint) 60%, transparent),
+      tonal-disabled-label-text-color: color-mix(in srgb, var(--brand) 60%, transparent),
       filled-label-text-size: 13.5px,
       tonal-label-text-size: 13.5px,
       outlined-label-text-size: 13.5px,

@@ -1,26 +1,30 @@
 <div class="auth-page">
-  <mat-card>
-    <mat-card-header><mat-card-title>Log in</mat-card-title></mat-card-header>
-    <mat-card-content>
-      @if (message()) {
-        <p class="message">{{ message() }}</p>
-      }
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <mat-form-field class="full-width">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" autocomplete="username" />
-          @if (form.controls.email.errors?.['server']; as msg) { <mat-error>{{ msg }}</mat-error> }
-        </mat-form-field>
-        <mat-form-field class="full-width">
-          <mat-label>Password</mat-label>
-          <input matInput type="password" formControlName="password" autocomplete="current-password" />
-          @if (form.controls.password.errors?.['server']; as msg) { <mat-error>{{ msg }}</mat-error> }
-        </mat-form-field>
-        <button mat-flat-button type="submit" class="full-width" [disabled]="form.invalid || busy()">Log in</button>
-      </form>
-    </mat-card-content>
-    <mat-card-actions>
-      <a mat-button routerLink="/register">New policyholder? Register</a>
-    </mat-card-actions>
+  <!-- the page's single hero panel: the only card with the large soft shadow (§5) -->
+  <mat-card appearance="outlined" class="hero">
+    <div class="hero-head">
+      <app-logo [large]="true" />
+      <h1>Log in</h1>
+      <p class="muted">Track your claims and answer questions from your claims officer.</p>
+    </div>
+
+    @if (message()) {
+      <p class="message" role="status">{{ message() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" formControlName="email" autocomplete="username" />
+        @if (form.controls.email.errors?.['server']; as msg) { <mat-error>{{ msg }}</mat-error> }
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input matInput type="password" formControlName="password" autocomplete="current-password" />
+        @if (form.controls.password.errors?.['server']; as msg) { <mat-error>{{ msg }}</mat-error> }
+      </mat-form-field>
+      <button matButton="filled" type="submit" class="full-width submit" [disabled]="form.invalid || busy()">Log in</button>
+    </form>
+
+    <p class="switch muted">New policyholder? <a routerLink="/register">Register</a></p>
   </mat-card>
 </div>

@@ -1,21 +1,54 @@
+// Shared by login and register.
 .auth-page {
   display: flex;
   justify-content: center;
-  padding: 48px 16px;
+  padding: 56px 16px;
 }
 
-mat-card {
+.hero {
   width: 100%;
   max-width: 420px;
+  padding: 32px;
+  box-sizing: border-box;
+  box-shadow: var(--shadow-hero);
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: fade-in-up 0.5s ease-out both; // keyframes are in styles.scss
+  }
 }
 
-form {
-  margin-top: 16px;
+.hero-head {
+  text-align: center;
+  margin-bottom: 20px;
+
+  h1 {
+    margin: 12px 0 4px;
+    font-size: 24px;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+mat-form-field {
+  margin-bottom: 4px;
+}
+
+.submit {
+  margin-top: 8px;
+  height: 44px;
 }
 
 .message {
-  padding: 8px 12px;
-  border-radius: 4px;
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: var(--radius-field);
+  background: var(--brand-tint);
+  color: var(--brand);
+}
+
+.switch {
+  text-align: center;
+  margin: 20px 0 0;
 }

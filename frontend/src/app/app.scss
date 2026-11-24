@@ -1,25 +1,93 @@
-mat-toolbar {
-  gap: 8px;
-  // Material 3 toolbars have no "color" input any more; colour it with the theme's own variables
-  background: var(--mat-sys-primary);
-  color: var(--mat-sys-on-primary);
+@use '../styles/tokens';
 
-  a,
-  button {
-    color: inherit;
-  }
+// Floating glass island: sticky 16px from the top, centred, max 1152px wide (§4)
+.nav {
+  @include tokens.glass;
+  position: sticky;
+  top: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 1152px;
+  margin: 16px auto 0;
+  padding: 8px 8px 8px 16px;
+  border-radius: var(--radius-pill);
+
+  // keep the island off the screen edges on small screens
+  width: calc(100% - 32px);
+  box-sizing: border-box;
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
   text-decoration: none;
-  font-weight: 500;
-  margin-right: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: 15px;
+  margin-right: 12px;
 }
 
-.who {
-  font-size: 14px;
+.links {
+  display: flex;
+  gap: 4px;
+
+  a {
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      background: var(--surface-2);
+    }
+
+    // active item: brand colour on the soft brand tint (§2)
+    &.active {
+      background: var(--brand-tint);
+      color: var(--brand);
+    }
+  }
 }
 
-.active {
-  text-decoration: underline;
+.spacer {
+  flex: 1;
+}
+
+.user-button {
+  color: var(--text);
+}
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--brand-tint);
+  color: var(--brand);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.menu-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+// small screens: keep the logo mark and the links, drop the long texts
+@media (max-width: 640px) {
+  .brand-name,
+  .user-name {
+    display: none;
+  }
 }

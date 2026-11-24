@@ -1,20 +1,42 @@
-<mat-toolbar>
-  <a class="brand" routerLink="/">Claims Platform</a>
+<!-- Floating glass top nav (FRONTEND-DESIGN.md §4, §5) -->
+<header class="nav">
+  <a class="brand" routerLink="/" aria-label="Claims Platform home">
+    <app-logo />
+    <span class="brand-name">Claims Platform</span>
+  </a>
 
-  <!-- navigation links depend on the role; officer/manager links arrive with their screens (brief 6b) -->
-  @switch (auth.role()) {
-    @case ('CLAIMANT') {
-      <a mat-button routerLink="/claims" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">My claims</a>
-      <a mat-button routerLink="/claims/new" routerLinkActive="active">Report an incident</a>
+  <!-- navigation links depend on the role; officer/manager links arrive with their screens (brief 6c) -->
+  <nav class="links">
+    @switch (auth.role()) {
+      @case ('CLAIMANT') {
+        <a routerLink="/claims" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">My claims</a>
+        <a routerLink="/claims/new" routerLinkActive="active">Report an incident</a>
+      }
     }
-  }
+  </nav>
 
   <span class="spacer"></span>
 
   @if (auth.user(); as user) {
-    <span class="who">{{ user.name }} · {{ user.role | titlecase }}</span>
-    <button mat-button (click)="auth.logout()">Log out</button>
+    <!-- mat-menu sets aria-expanded on its trigger automatically (§8) -->
+    <button matButton class="user-button" [matMenuTriggerFor]="userMenu" [attr.aria-label]="'Account menu for ' + user.name">
+      <span class="avatar" aria-hidden="true">{{ initial() }}</span>
+      <span class="user-name">{{ user.name }}</span>
+      <mat-icon iconPositionEnd>expand_more</mat-icon>
+    </button>
+    <mat-menu #userMenu="matMenu" xPosition="before">
+      <div class="menu-header">
+        <strong>{{ user.name }}</strong>
+        <span class="muted">{{ user.role | titlecase }} · {{ user.email }}</span>
+      </div>
+      <button mat-menu-item (click)="auth.logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Log out</span>
+      </button>
+    </mat-menu>
   }
-</mat-toolbar>
+</header>
 
-<router-outlet />
+<main>
+  <router-outlet />
+</main>

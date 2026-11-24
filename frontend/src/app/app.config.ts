@@ -2,8 +2,6 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { MAT_CARD_CONFIG } from '@angular/material/card';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { provideApi as provideAuthApi } from './api/auth';
 import { provideApi as provideClaimsApi } from './api/claims';
 import { provideApi as provideReportingApi } from './api/reporting';
@@ -23,9 +21,5 @@ export const appConfig: ApplicationConfig = {
     provideReportingApi({ basePath: '' }),
     // the Material datepicker works with plain JavaScript Date objects (no date library needed)
     provideNativeDateAdapter(),
-    // Design system defaults (docs/FRONTEND-DESIGN.md §5, §7): bordered fields and flat bordered cards
-    // everywhere, so templates don't have to repeat appearance="..." on each one.
-    { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } },
-    { provide: MAT_CARD_CONFIG, useValue: { appearance: 'outlined' } },
   ],
 };

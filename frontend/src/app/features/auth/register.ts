@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { Logo } from '../../shared/logo';
 import { AuthControllerService } from '../../api/auth';
@@ -12,7 +13,7 @@ import { ErrorService } from '../../core/error.service';
 /** Only existing policyholders can register: email must match the policy's holder email (design §4). */
 @Component({
   selector: 'app-register',
-  imports: [Logo, ReactiveFormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [Logo, ReactiveFormsModule, RouterLink, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule, MatButtonModule],
   templateUrl: './register.html',
   styleUrl: './auth-form.scss',
 })
@@ -22,6 +23,8 @@ export class Register {
   private readonly router = inject(Router);
 
   readonly busy = signal(false);
+  /** Eye button in the password field: false = dots, true = readable text. */
+  readonly showPassword = signal(false);
 
   // same limits as the backend's RegisterRequest, so most mistakes are caught before sending
   readonly form = inject(FormBuilder).nonNullable.group({

@@ -209,14 +209,17 @@ class ClaimService {
 
     /** The claim if the caller may see it, otherwise 404 (not 403: don't reveal that it exists). */
     private Claim visible(UUID claimId, Caller caller) {
-        return claims.findById(claimId)
-                .filter(c -> switch (caller.role()) {
-                    case Caller.CLAIMANT -> c.getClaimantId().equals(caller.id());
-                    case Caller.OFFICER -> c.getMarket().equals(caller.market());
-                    case Caller.MANAGER -> true;
-                    default -> false;
-                })
-                .orElseThrow(() -> notFound("Claim not found"));
+        return claims.findById(claimId).filter(c -> canSee(c, caller)).orElseThrow(() -> notFound("Claim not found"));
+    }
+
+    /** Owner, officers of the claim's market, managers. Also used for documents. */
+    static boolean canSee(Claim c, Caller caller) {
+        return switch (caller.role()) {
+            case Caller.CLAIMANT -> c.getClaimantId().equals(caller.id());
+            case Caller.OFFICER -> c.getMarket().equals(caller.market());
+            case Caller.MANAGER -> true;
+            default -> false;
+        };
     }
 
     /**

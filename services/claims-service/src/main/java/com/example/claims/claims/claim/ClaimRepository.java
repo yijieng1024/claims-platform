@@ -1,11 +1,14 @@
 package com.example.claims.claims.claim;
 
+import jakarta.persistence.LockModeType;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 interface ClaimRepository extends JpaRepository<Claim, UUID> {
@@ -22,4 +25,9 @@ interface ClaimRepository extends JpaRepository<Claim, UUID> {
             where (:status is null or c.status = :status) and (:market is null or c.market = :market)
             """)
     Page<Claim> search(ClaimStatus status, String market, Pageable pageable);
+
+    /** SELECT ... FOR UPDATE: serialises document uploads per claim (the 20-document limit). Doesn't bump version. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Claim c where c.id = :id")
+    Optional<Claim> findByIdForUpdate(UUID id);
 }

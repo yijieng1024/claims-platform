@@ -96,6 +96,16 @@ final class ClaimDtos {
         }
     }
 
+    /** Document metadata; {@code informationRequestId} is set if it was uploaded for a request. */
+    record DocumentView(UUID id, UUID informationRequestId, String originalFilename, String contentType,
+            long sizeBytes, UUID uploadedById, Instant uploadedAt) {
+
+        static DocumentView of(ClaimDocument d) {
+            return new DocumentView(d.getId(), d.getInformationRequestId(), d.getOriginalFilename(),
+                    d.getContentType(), d.getSizeBytes(), d.getUploadedById(), d.getUploadedAt());
+        }
+    }
+
     /** Stable JSON for a page (Spring's PageImpl JSON is not a guaranteed format). */
     record PageResponse<T>(List<T> content, int page, int size, long totalElements, int totalPages) {
 

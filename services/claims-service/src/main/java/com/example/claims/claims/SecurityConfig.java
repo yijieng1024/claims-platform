@@ -19,6 +19,7 @@ class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/claims").hasRole("CLAIMANT")
                 .requestMatchers(HttpMethod.GET, "/api/claims/my").hasRole("CLAIMANT")
                 .requestMatchers(HttpMethod.POST, "/api/claims/*/information-requests/*/response").hasRole("CLAIMANT")
+                .requestMatchers(HttpMethod.POST, "/api/claims/*/documents").hasRole("CLAIMANT")
                 .requestMatchers(HttpMethod.GET, "/api/claims/queue", "/api/claims/assigned").hasRole("OFFICER")
                 .requestMatchers(HttpMethod.POST, "/api/claims/**").hasRole("OFFICER") // all other actions
                 .requestMatchers(HttpMethod.GET, "/api/claims").hasRole("MANAGER")

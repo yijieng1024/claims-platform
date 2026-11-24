@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { AuthService } from '../core/auth.service';
 
-// ponytail: placeholder so officer and manager logins land somewhere; replaced by their screens in brief 6b
+// Placeholder so officer and manager logins land somewhere; replaced by their screens in brief 6c.
 @Component({
   selector: 'app-staff-home',
   template: `

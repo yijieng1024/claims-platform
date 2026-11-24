@@ -26,7 +26,7 @@ export const routes: Routes = [
     ],
   },
   {
-    // ponytail: temporary landing page for officers and managers until their screens exist (brief 6b)
+    // temporary landing page for officers and managers until their screens exist (brief 6c)
     path: 'staff',
     canActivate: [roleGuard('OFFICER', 'MANAGER')],
     loadComponent: () => import('./features/staff-home').then((m) => m.StaffHome),

@@ -33,7 +33,7 @@ src/
     features/           one folder per area of the app; each page is one component
       auth/             login, register
       claimant/         my claims, new claim, claim detail
-      staff-home.ts     temporary landing page for officers and managers (replaced in brief 6b)
+      staff-home.ts     temporary landing page for officers and managers (replaced in brief 6c)
 ```
 
 Each page is a **standalone component**: a TypeScript class (state + actions), an HTML template and
@@ -84,7 +84,7 @@ Example: the claimant opens "My claims".
 - **Route guards** (`core/role.guard.ts`) run before a page opens. `roleGuard('CLAIMANT')` lets only
   claimants in. If you're not logged in, you're sent to the login page. If you have another role,
   you're sent to your own start page. Guards only hide pages; the backend checks every request.
-- After login: claimant → My claims (`/claims`); officer and manager → `/staff` (placeholder until 6b).
+- After login: claimant → My claims (`/claims`); officer and manager → `/staff` (placeholder until 6c).
 
 ## API client (generated)
 

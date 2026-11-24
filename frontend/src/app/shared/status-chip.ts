@@ -1,30 +1,53 @@
 import { Component, computed, input } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 
-/** Claim status as a coloured pill. A styled <span> is enough here; no Material chip behaviour is needed. */
+/** Icon per status (FRONTEND-DESIGN.md §2). Status is never shown by colour alone: always icon + text. */
+const ICONS: Record<string, string> = {
+  SUBMITTED: 'inbox',
+  UNDER_REVIEW: 'search',
+  INFO_REQUESTED: 'help_outline',
+  ASSESSED: 'fact_check',
+  SETTLED: 'check_circle',
+  REJECTED: 'cancel',
+};
+
+/** Claim status as a pill with an icon. A styled <span> is enough; no Material chip behaviour is needed. */
 @Component({
   selector: 'app-status-chip',
-  template: `<span class="chip" [class]="status()">{{ label() }}</span>`,
+  imports: [MatIconModule],
+  template: `
+    <span class="chip" [class]="status()">
+      <mat-icon aria-hidden="true">{{ icon() }}</mat-icon>{{ label() }}
+    </span>
+  `,
   styles: `
     .chip {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px 3px 7px;
+      border-radius: var(--radius-pill);
       font-size: 12px;
-      font-weight: 500;
+      font-weight: 600;
       white-space: nowrap;
-      background: #eceff1;
-      color: #37474f;
+      line-height: 18px;
     }
-    .SUBMITTED { background: #e3f2fd; color: #0d47a1; }
-    .UNDER_REVIEW { background: #ede7f6; color: #4527a0; }
-    .INFO_REQUESTED { background: #fff3e0; color: #e65100; }
-    .ASSESSED { background: #e0f7fa; color: #006064; }
-    .SETTLED { background: #e8f5e9; color: #1b5e20; }
-    .REJECTED { background: #ffebee; color: #b71c1c; }
+    mat-icon {
+      font-size: 15px;
+      width: 15px;
+      height: 15px;
+    }
+    /* colours from the §2 status table; UNDER_REVIEW and ASSESSED share one, the icon tells them apart */
+    .SUBMITTED { background: var(--surface-2); color: var(--text-muted); }
+    .UNDER_REVIEW, .ASSESSED { background: var(--brand-tint); color: var(--brand); }
+    .INFO_REQUESTED { background: var(--warning-soft); color: var(--warning); }
+    .SETTLED { background: var(--positive-soft); color: var(--positive); }
+    .REJECTED { background: var(--negative-soft); color: var(--negative); }
   `,
 })
 export class StatusChip {
   readonly status = input<string | undefined>();
+  readonly icon = computed(() => ICONS[this.status() ?? ''] ?? 'circle');
   // "INFO_REQUESTED" -> "Info requested"
   readonly label = computed(() => {
     const s = (this.status() ?? '').replace(/_/g, ' ').toLowerCase();

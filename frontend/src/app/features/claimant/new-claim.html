@@ -27,7 +27,7 @@
 
         @if (policy(); as policy) {
           <h2>2. What happened?</h2>
-          <mat-form-field>
+          <mat-form-field class="date-field">
             <mat-label>Incident date</mat-label>
             <input matInput [matDatepicker]="picker" formControlName="incidentDate" [min]="minDate()" [max]="maxDate()" />
             <mat-datepicker-toggle matIconSuffix [for]="picker" />

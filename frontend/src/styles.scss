@@ -1,23 +1,72 @@
-// Theme: Angular Material's prebuilt "azure-blue" theme (added in angular.json "styles").
-// A prebuilt theme means no Sass theming code to maintain; azure-blue is the most neutral of the four.
+// Global styles. Order: tokens → Material theme → Material internals → our base and helper classes.
+// The design rules are in docs/FRONTEND-DESIGN.md; section numbers below refer to it.
+@use '@angular/material' as mat;
+@use 'styles/tokens';
+@use 'styles/theme';
+@use 'styles/material-internals';
+
+html {
+  @include theme.apply;
+}
 
 html,
 body {
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
   margin: 0;
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
-  background: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
+  font-family: var(--font);
+  font-size: 13.5px;
+  color: var(--text);
+  background-color: var(--bg);
+  // dot-grid canvas (§2): a 1.35px dot every 26px, CSS only. Cards cover it under text.
+  background-image: radial-gradient(var(--dot) 1.35px, transparent 1.35px);
+  background-size: 26px 26px;
+  -webkit-font-smoothing: antialiased;
 }
 
-// small layout helpers shared by every page
+// Headings (§3): bold, tight letter-spacing, 30 / 24 / 18 / 16px
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+h1 { font-size: 30px; }
+h2 { font-size: 24px; }
+h3 { font-size: 18px; }
+h4 { font-size: 16px; }
+
+a {
+  color: var(--brand);
+}
+
+// Visible focus for plain links and anything else not drawn by Material (§8)
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+// ---- Page layout (§4) ----
+// Forms and detail pages ~960px; lists can opt into .wide (same width as the top nav)
 .page {
-  max-width: 1100px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 24px 16px 48px;
+
+  &.wide {
+    max-width: 1152px;
+  }
+
+  @media (min-width: 600px) {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
 }
 
 .row {
@@ -36,9 +85,79 @@ body {
 }
 
 .muted {
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--text-muted);
 }
 
 .error-text {
-  color: var(--mat-sys-error);
+  color: var(--negative);
+}
+
+// Numbers line up in columns (§3): amounts, claim numbers, dates, counts
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+// Numeric table columns are right-aligned (§7)
+.mat-mdc-cell.num-col,
+.mat-mdc-header-cell.num-col {
+  text-align: right;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+// Cards hold body content (§5). Padding for cards that aren't using mat-card-content.
+.card-body {
+  padding: 20px 24px;
+}
+
+// A table sitting directly inside a card: let the header fill reach the card's rounded edges
+mat-card.table-card {
+  overflow: hidden;
+}
+
+// Destructive button (§7): negative text on a 10% negative fill. Use on a matButton="tonal".
+// Must always open a confirm dialog first.
+.btn-destructive {
+  @include mat.button-overrides(
+    (
+      tonal-container-color: var(--negative-soft),
+      tonal-label-text-color: var(--negative),
+    )
+  );
+}
+
+// Empty states (§7): centred muted text + one primary action
+.empty-state {
+  text-align: center;
+  padding: 48px 16px;
+
+  p {
+    color: var(--text-muted);
+    margin: 0 0 16px;
+  }
+}
+
+// ---- Motion (§4): fade-in-up entrance, only for people who haven't asked for reduced motion ----
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  // every direct child of a page enters, staggered by 60ms
+  .page > * {
+    animation: fade-in-up 0.5s ease-out both;
+  }
+
+  @for $i from 2 through 8 {
+    .page > *:nth-child(#{$i}) {
+      animation-delay: #{($i - 1) * 60}ms;
+    }
+  }
 }

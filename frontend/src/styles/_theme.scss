@@ -1,0 +1,119 @@
+// Angular Material theme (docs/FRONTEND-DESIGN.md §1, §3, §6, §7).
+// Only Material's supported APIs here: mat.theme, mat.theme-overrides and the *-overrides mixins.
+// Deep selectors into Material internals live in _material-internals.scss instead.
+@use '@angular/material' as mat;
+@use 'theme-colors';
+
+@mixin apply {
+  // Palette generated from the brand navy by `ng generate @angular/material:theme-color`.
+  @include mat.theme(
+    (
+      color: (
+        primary: theme-colors.$primary-palette,
+        tertiary: theme-colors.$tertiary-palette,
+        theme-type: light,
+      ),
+      typography: (
+        plain-family: var(--font),
+        brand-family: var(--font),
+      ),
+      density: 0,
+    )
+  );
+
+  // The generated palette's "primary" is a lighter tone (#3f5e94) than the brand navy, so the system
+  // colours that matter are pinned to our tokens. Every Material component reads these --mat-sys-* values.
+  @include mat.theme-overrides(
+    (
+      primary: var(--brand),
+      on-primary: var(--on-brand),
+      primary-container: var(--brand-tint),
+      on-primary-container: var(--brand),
+      error: var(--negative),
+      surface: var(--bg),
+      on-surface: var(--text),
+      on-surface-variant: var(--text-muted),
+      outline: var(--text-muted),
+      outline-variant: var(--line),
+      surface-container-lowest: var(--surface-solid),
+      surface-container-low: var(--surface-solid),
+      surface-container: var(--surface-solid),
+      surface-container-high: var(--surface-solid),
+      surface-container-highest: var(--surface-2),
+    )
+  );
+
+  // Buttons: all pills. "filled" = primary, "tonal" = secondary (brand tint), §7.
+  @include mat.button-overrides(
+    (
+      filled-container-shape: var(--radius-pill),
+      tonal-container-shape: var(--radius-pill),
+      outlined-container-shape: var(--radius-pill),
+      protected-container-shape: var(--radius-pill),
+      text-container-shape: var(--radius-pill),
+      filled-container-color: var(--brand),
+      filled-label-text-color: var(--on-brand),
+      tonal-container-color: var(--brand-tint),
+      tonal-label-text-color: var(--brand),
+      text-label-text-color: var(--brand),
+      filled-label-text-size: 13.5px,
+      tonal-label-text-size: 13.5px,
+      outlined-label-text-size: 13.5px,
+      text-label-text-size: 13.5px,
+    )
+  );
+
+  // Cards: flat, translucent surface, hairline border, 24px radius (§5). Cards use appearance="outlined".
+  @include mat.card-overrides(
+    (
+      outlined-container-color: var(--surface),
+      outlined-outline-color: var(--line),
+      outlined-container-shape: var(--radius-card),
+      outlined-container-elevation: none,
+    )
+  );
+
+  // Inputs: outline appearance, 12px radius, hairline border, brand border on focus (§7).
+  // The canvas background and the focus ring are in _material-internals.scss (no token for them).
+  @include mat.form-field-overrides(
+    (
+      outlined-container-shape: var(--radius-field),
+      outlined-outline-color: var(--line),
+      outlined-hover-outline-color: var(--text-muted),
+      outlined-focus-outline-color: var(--brand),
+      outlined-focus-outline-width: 1px,
+      container-text-size: 13.5px,
+    )
+  );
+  // ~46px tall fields instead of Material's 56px
+  @include mat.form-field-density(-2);
+
+  // Tables: transparent on the card, 12px muted header labels, 13px cells, hairline rows (§7).
+  @include mat.table-overrides(
+    (
+      background-color: transparent,
+      header-headline-color: var(--text-muted),
+      header-headline-size: 12px,
+      header-headline-weight: 600,
+      header-container-height: 44px,
+      row-item-label-text-size: 13px,
+      row-item-outline-color: var(--line),
+      row-item-container-height: 52px,
+    )
+  );
+
+  // Menus, dialogs, datepicker: 16–20px (§6)
+  // the user menu is a glass overlay; its blur is in _material-internals.scss
+  @include mat.menu-overrides(
+    (
+      container-shape: var(--radius-overlay),
+      container-color: var(--glass),
+      container-elevation-shadow: var(--shadow-glass),
+    )
+  );
+  @include mat.dialog-overrides((container-shape: 20px, container-color: var(--surface-solid)));
+  @include mat.datepicker-overrides((calendar-container-shape: var(--radius-overlay)));
+
+  // Visible keyboard focus on every Material control (§8), drawn in the brand colour
+  @include mat.strong-focus-indicators((border-color: var(--brand)));
+}

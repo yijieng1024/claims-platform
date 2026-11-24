@@ -1,0 +1,50 @@
+// Design tokens: the only place colours are defined (docs/FRONTEND-DESIGN.md §2).
+// Components use var(--token); they never contain hex/rgb values of their own.
+// Light mode only. Dark mode would be a second block of the same variables, not a component change.
+
+:root {
+  --bg: #fbfbfd; // page canvas, input backgrounds
+  --surface: rgba(255, 255, 255, 0.85); // cards and panels (the dot grid shows through faintly)
+  --surface-solid: #ffffff; // opaque fallback, e.g. inside dialogs
+  --surface-2: #f5f5f7; // nested fills: chips, table header, hover
+  --brand: #042e61; // primary actions, logo, active nav, links
+  --brand-light: #0b4a8f; // lighter end of the logo gradient
+  --brand-tint: #eaf1fa; // selected pills, soft badges, focus ring
+  --positive: #1a7f4f; // success, settled
+  --negative: #b42318; // errors, rejected, destructive actions
+  --warning: #b54708; // needs attention (information requested)
+  --text: #1d1d1f;
+  --text-muted: #6e6e73; // 4.66:1 on --surface-2, 5.03:1 on --surface (WCAG AA needs 4.5:1)
+  --on-brand: #ffffff; // text on --brand
+  --line: rgba(29, 29, 31, 0.07); // hairline borders, table dividers
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-edge: rgba(255, 255, 255, 0.55);
+  --shadow: rgba(4, 46, 97, 0.08);
+  --dot: rgb(15 23 42 / 0.14);
+
+  // status colours at ~10% for chip and badge backgrounds (§2: "low alpha for backgrounds")
+  --positive-soft: color-mix(in srgb, var(--positive) 10%, transparent);
+  --negative-soft: color-mix(in srgb, var(--negative) 10%, transparent);
+  --warning-soft: color-mix(in srgb, var(--warning) 10%, transparent);
+
+  // shapes (§6)
+  --radius-pill: 999px;
+  --radius-card: 24px;
+  --radius-field: 12px;
+  --radius-overlay: 16px;
+
+  // elevation (§5)
+  --shadow-hero: 0 24px 72px var(--shadow);
+  --shadow-glass: 0 12px 40px var(--shadow);
+
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+// The glass recipe (§5), only for floating things: top nav, menus, dialogs. Never on body content.
+@mixin glass {
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%); // Safari still needs the prefix
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--shadow-glass);
+}

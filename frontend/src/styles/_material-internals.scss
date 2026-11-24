@@ -1,0 +1,33 @@
+// The only file with selectors into Angular Material's internal class names.
+// Each rule exists because Material has no theme token for it (checked against the *-overrides
+// mixins in Angular Material 22). If a future version adds a token, move the rule to _theme.scss.
+// Internal class names can change between Material versions: check this file after upgrading.
+@use 'tokens';
+
+// Form fields (§7): canvas background inside the outline, and a soft brand focus ring.
+// The outlined field has no background-colour token, and focus has no box-shadow token.
+.mat-mdc-form-field .mat-mdc-text-field-wrapper {
+  background: var(--bg);
+  border-radius: var(--radius-field);
+  transition: box-shadow 0.15s ease-out;
+}
+
+.mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
+  box-shadow: 0 0 0 3px var(--brand-tint);
+}
+
+// Tables (§7): header row on --surface-2 and a hover fill. Neither has a table token.
+.mat-mdc-header-row {
+  background: var(--surface-2);
+}
+
+.mat-mdc-row:hover {
+  background: var(--surface-2);
+}
+
+// Menus are glass overlays (§5). The colour comes from the menu token; the blur has no token.
+.mat-mdc-menu-panel {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-edge);
+}

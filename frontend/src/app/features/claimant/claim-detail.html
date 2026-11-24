@@ -22,8 +22,9 @@
         <!-- scrolls sideways when there are more steps than fit; tabindex lets keyboard users scroll it -->
         <div class="timeline-scroll" tabindex="0" role="region" aria-label="Claim timeline">
           <ol class="timeline">
+            <!-- steps that happened, with when and by whom -->
             @for (h of data()!.history; track $index; let last = $last) {
-              <li [class.current]="last">
+              <li class="done" [class.current]="last">
                 <span class="dot" aria-hidden="true"></span>
                 <app-status-chip [status]="h.toStatus" />
                 <div class="when muted num">{{ h.changedAt | date: 'medium' }}</div>
@@ -31,6 +32,16 @@
                 @if (h.note) {
                   <div class="pre note">{{ h.note }}</div>
                 }
+              </li>
+            }
+            <!-- steps still ahead, greyed out -->
+            @for (step of upcomingSteps(); track step) {
+              <li class="upcoming">
+                <span class="dot" aria-hidden="true"></span>
+                <span class="step-label">{{ step }}</span>
+                <div class="when muted">
+                  {{ step === 'Decision' ? 'Settled or rejected' : 'Not yet' }}
+                </div>
               </li>
             }
           </ol>

@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.claims.web.WebCommonAutoConfiguration;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.RSASSASigner;
@@ -22,6 +23,7 @@ import java.util.Date;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -33,7 +35,8 @@ import org.springframework.test.web.servlet.MockMvc;
  * Runs the real resource-server config against a stand-in auth-service JWKS endpoint (no DB needed).
  */
 @WebMvcTest(WhoAmIController.class)
-@Import({SecurityConfig.class, ProblemDetailsAdvice.class})
+@Import(SecurityConfig.class)
+@ImportAutoConfiguration(WebCommonAutoConfiguration.class)
 class JwtVerificationTest {
 
     static final String ISSUER = "http://localhost:8081";

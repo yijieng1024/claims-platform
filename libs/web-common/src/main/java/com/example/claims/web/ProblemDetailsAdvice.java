@@ -1,4 +1,4 @@
-package com.example.claims.auth;
+package com.example.claims.web;
 
 import java.util.LinkedHashMap;
 import org.slf4j.Logger;
@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,13 +19,16 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 /** Every error leaves this service as an RFC 7807 ProblemDetail. */
 @RestControllerAdvice
-class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
+public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ProblemDetailsAdvice.class);
 
-    @ExceptionHandler(BadCredentialsException.class)
-    ProblemDetail badCredentials(BadCredentialsException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, AuthService.BAD_CREDENTIALS);
+    /** Token couldn't be checked at all, e.g. auth-service (JWKS) unreachable. Not the caller's fault. */
+    @ExceptionHandler(AuthenticationServiceException.class)
+    ProblemDetail authUnavailable(AuthenticationServiceException ex) {
+        log.warn("Could not verify token: {}", ex.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+                "Authentication is temporarily unavailable, try again shortly");
     }
 
     @ExceptionHandler(AuthenticationException.class)

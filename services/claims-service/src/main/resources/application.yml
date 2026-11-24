@@ -19,8 +19,6 @@ spring:
           jwk-set-uri: ${AUTH_JWKS_URI:http://localhost:8081/.well-known/jwks.json}
           # with jwk-set-uri set, this is only used to check the iss claim (no discovery call)
           issuer-uri: ${AUTH_JWT_ISSUER:http://localhost:8081}
-          authorities-claim-name: role
-          authority-prefix: ROLE_
 
 springdoc:
   swagger-ui:

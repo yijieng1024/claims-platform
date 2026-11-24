@@ -1,4 +1,4 @@
-package com.example.claims.claims;
+package com.example.claims.web;
 
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
@@ -14,7 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
  * {@link ProblemDetailsAdvice} renders them as ProblemDetail instead of Boot's default error JSON.
  */
 @RestController
-class ErrorPageController implements ErrorController {
+public class ErrorPageController implements ErrorController {
 
     @RequestMapping("/error")
     void error(HttpServletRequest request) throws Throwable {

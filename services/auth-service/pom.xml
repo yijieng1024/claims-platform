@@ -14,6 +14,11 @@
     <artifactId>auth-service</artifactId>
 
     <dependencies>
+        <!-- shared JWT security + ProblemDetail errors (auto-configured) -->
+        <dependency>
+            <groupId>com.example.claims</groupId>
+            <artifactId>web-common</artifactId>
+        </dependency>
         <!-- REST endpoints -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

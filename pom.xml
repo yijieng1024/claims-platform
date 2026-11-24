@@ -19,6 +19,7 @@
 
     <modules>
         <module>libs/claims-events</module>
+        <module>libs/web-common</module>
         <module>services/auth-service</module>
         <module>services/claims-service</module>
         <module>services/reporting-service</module>
@@ -40,6 +41,11 @@
             <dependency>
                 <groupId>com.example.claims</groupId>
                 <artifactId>claims-events</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.example.claims</groupId>
+                <artifactId>web-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

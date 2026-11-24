@@ -8,6 +8,9 @@ spring:
     url: ${CLAIMS_DB_URL:jdbc:postgresql://localhost:5433/claims_platform}
     username: ${CLAIMS_DB_USER:claims_svc}
     password: ${CLAIMS_DB_PASSWORD:claims_svc}
+    hikari:
+      # unqualified SQL resolves to our schema whatever the DB user's search_path is
+      schema: claims
   flyway:
     schemas: claims
     default-schema: claims

@@ -1,0 +1,111 @@
+<div class="page">
+  <a mat-button routerLink="/claims"><mat-icon>arrow_back</mat-icon> My claims</a>
+
+  @if (claim(); as claim) {
+    <!-- Header -->
+    <div class="row">
+      <h1>{{ claim.claimNumber }}</h1>
+      <app-status-chip [status]="claim.status" />
+    </div>
+
+    <mat-card>
+      <mat-card-content>
+        <dl class="facts">
+          <dt>Policy</dt><dd>{{ claim.policyNumber }}</dd>
+          <dt>Type</dt><dd>{{ claim.type | titlecase }}</dd>
+          <dt>Market</dt><dd>{{ claim.market }}</dd>
+          <dt>Incident date</dt><dd>{{ claim.incidentDate | date: 'mediumDate' }}</dd>
+          <dt>Location</dt><dd>{{ claim.incidentLocation }}</dd>
+          <dt>Claimed</dt><dd>{{ claim.claimedAmount | money: claim.currency }}</dd>
+          @if (claim.settledAmount != null) {
+            <dt>Settled</dt><dd>{{ claim.settledAmount | money: claim.currency }}</dd>
+          }
+          @if (claim.rejectionReason) {
+            <dt>Rejection reason</dt><dd>{{ claim.rejectionReason }}</dd>
+          }
+          <dt>Description</dt><dd class="pre">{{ claim.description }}</dd>
+        </dl>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Open information request -->
+    @if (openRequest(); as request) {
+      <mat-card class="request">
+        <mat-card-header>
+          <mat-card-title>The claims officer needs more information</mat-card-title>
+          <mat-card-subtitle>Asked {{ request.createdAt | date: 'medium' }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="pre question">{{ request.question }}</p>
+          <mat-form-field class="full-width">
+            <mat-label>Your response</mat-label>
+            <textarea matInput [formControl]="responseText" rows="4" maxlength="4000"></textarea>
+          </mat-form-field>
+          <app-file-picker [(files)]="responseFiles" />
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-flat-button (click)="respond(request)" [disabled]="responseText.invalid || busy()">Send response</button>
+        </mat-card-actions>
+      </mat-card>
+    }
+
+    <!-- Documents -->
+    <h2>Documents</h2>
+    @if (data()!.documents.length) {
+      <table mat-table [dataSource]="data()!.documents">
+        <ng-container matColumnDef="originalFilename">
+          <th mat-header-cell *matHeaderCellDef>File</th>
+          <td mat-cell *matCellDef="let d">{{ d.originalFilename }}</td>
+        </ng-container>
+        <ng-container matColumnDef="uploadedAt">
+          <th mat-header-cell *matHeaderCellDef>Uploaded</th>
+          <td mat-cell *matCellDef="let d">{{ d.uploadedAt | date: 'medium' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="request">
+          <th mat-header-cell *matHeaderCellDef>For information request</th>
+          <td mat-cell *matCellDef="let d" class="muted">{{ requestQuestion(d.informationRequestId) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="download">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let d">
+            <button mat-icon-button (click)="download(d)" [attr.aria-label]="'Download ' + d.originalFilename">
+              <mat-icon>download</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="documentColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: documentColumns"></tr>
+      </table>
+    } @else {
+      <p class="muted">No documents yet.</p>
+    }
+
+    @if (!closed()) {
+      <div class="upload-more">
+        <h3>Upload more documents</h3>
+        <app-file-picker [(files)]="extraFiles" />
+        <button mat-flat-button (click)="uploadMore()" [disabled]="extraFiles().length === 0 || busy()">Upload</button>
+      </div>
+    }
+
+    @if (busy()) { <mat-progress-bar mode="indeterminate" /> }
+
+    <!-- Status history, oldest first (the backend's order) -->
+    <h2>History</h2>
+    <ol class="timeline">
+      @for (h of data()!.history; track $index) {
+        <li>
+          <div class="when muted">{{ h.changedAt | date: 'medium' }}</div>
+          <div>
+            @if (h.fromStatus) { <app-status-chip [status]="h.fromStatus" /> → }
+            <app-status-chip [status]="h.toStatus" />
+            <span class="muted"> by {{ h.changedByName }} ({{ h.changedByRole | titlecase }})</span>
+          </div>
+          @if (h.note) { <div class="pre note">{{ h.note }}</div> }
+        </li>
+      }
+    </ol>
+  } @else {
+    <mat-progress-bar mode="indeterminate" />
+  }
+</div>

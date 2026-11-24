@@ -17,6 +17,15 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/register').then((m) => m.Register),
   },
   {
+    path: 'claims',
+    canActivate: [roleGuard('CLAIMANT')],
+    children: [
+      { path: '', loadComponent: () => import('./features/claimant/my-claims').then((m) => m.MyClaims) },
+      { path: 'new', loadComponent: () => import('./features/claimant/new-claim').then((m) => m.NewClaim) },
+      { path: ':id', loadComponent: () => import('./features/claimant/claim-detail').then((m) => m.ClaimDetailPage) },
+    ],
+  },
+  {
     // ponytail: temporary landing page for officers and managers until their screens exist (brief 6b)
     path: 'staff',
     canActivate: [roleGuard('OFFICER', 'MANAGER')],

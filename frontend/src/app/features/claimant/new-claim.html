@@ -1,0 +1,78 @@
+<div class="page">
+  <h1>Report an incident</h1>
+
+  @if (policies(); as policies) {
+    @if (policies.length === 0) {
+      <p class="muted">There are no policies registered to your email address that you can claim on.</p>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <h2>1. Which policy?</h2>
+        <mat-radio-group formControlName="policyId" class="policies">
+          @for (p of policies; track p.id) {
+            <mat-radio-button [value]="p.id">
+              <div class="policy">
+                <strong>{{ p.policyNumber }}</strong> · {{ p.productType | titlecase }} · {{ p.insuredItem }}
+                <div class="muted">
+                  Cover {{ p.startDate | date: 'mediumDate' }} – {{ p.endDate | date: 'mediumDate' }}
+                  @if (p.inForceToday) {
+                    · <span class="in-force">In force today</span>
+                  } @else {
+                    · <span>Not in force today</span>
+                  }
+                </div>
+              </div>
+            </mat-radio-button>
+          }
+        </mat-radio-group>
+
+        @if (policy(); as policy) {
+          <h2>2. What happened?</h2>
+          <mat-form-field>
+            <mat-label>Incident date</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="incidentDate" [min]="minDate()" [max]="maxDate()" />
+            <mat-datepicker-toggle matIconSuffix [for]="picker" />
+            <mat-datepicker #picker />
+            <mat-hint>Within the cover period, not after today</mat-hint>
+            @if (form.controls.incidentDate.errors?.['server']; as msg) { <mat-error>{{ msg }}</mat-error> }
+            @else if (form.controls.incidentDate.hasError('matDatepickerMin') || form.controls.incidentDate.hasError('matDatepickerMax')) {
+              <mat-error>Must be between {{ minDate() | date: 'mediumDate' }} and {{ maxDate() | date: 'mediumDate' }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field class="full-width">
+            <mat-label>Location</mat-label>
+            <input matInput formControlName="incidentLocation" maxlength="255" />
+            @if (form.controls.incidentLocation.errors?.['server']; as msg) { <mat-error>{{ msg }}</mat-error> }
+          </mat-form-field>
+
+          <mat-form-field class="full-width">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" rows="5" maxlength="4000"></textarea>
+            @if (form.controls.description.errors?.['server']; as msg) { <mat-error>{{ msg }}</mat-error> }
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Claimed amount</mat-label>
+            <span matTextPrefix>{{ policy.currency }}&nbsp;</span>
+            <input matInput type="number" formControlName="claimedAmount" min="0" />
+            @if (form.controls.claimedAmount.errors?.['server']; as msg) { <mat-error>{{ msg }}</mat-error> }
+            @else if (form.controls.claimedAmount.errors?.['decimals'] === 0) { <mat-error>Whole {{ policy.currency }} only</mat-error> }
+            @else if (form.controls.claimedAmount.hasError('decimals')) { <mat-error>At most 2 decimals</mat-error> }
+            @else if (form.controls.claimedAmount.hasError('min')) { <mat-error>Must be more than 0</mat-error> }
+          </mat-form-field>
+
+          <h2>3. Photos or documents (optional)</h2>
+          <app-file-picker [(files)]="files" />
+
+          <div class="row actions">
+            <button mat-flat-button type="submit" [disabled]="form.invalid || busy()">Submit claim</button>
+            <a mat-button routerLink="/claims">Cancel</a>
+          </div>
+          @if (busy()) { <mat-progress-bar mode="indeterminate" /> }
+        }
+      </form>
+    }
+  } @else {
+    <mat-progress-bar mode="indeterminate" />
+  }
+</div>

@@ -1,0 +1,17 @@
+.policies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.policy {
+  padding: 4px 0;
+}
+
+.in-force {
+  color: #1b5e20;
+}
+
+.actions {
+  margin: 24px 0 8px;
+}

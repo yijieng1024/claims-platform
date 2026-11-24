@@ -1,0 +1,26 @@
+# Build
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local runtime data (uploads, generated keys) - never commit
+data/
+*.pem
+*.key
+.env
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/.angular/

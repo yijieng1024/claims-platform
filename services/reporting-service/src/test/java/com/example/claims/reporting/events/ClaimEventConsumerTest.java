@@ -121,21 +121,20 @@ class ClaimEventConsumerTest {
     }
 
     @Test
-    void anOlderVersionAfterANewerOneIsIgnored() {
+    void anOlderVersionDoesNotOverwriteTheSummaryButStillNotifies() {
         var claim = new TestClaim("MY", "MYR", CLAIMANT1, "900.00");
-        ClaimEvent submitted = claim.submitted();
-        ClaimEvent assigned = claim.assigned(OFFICER_MY1, ASSIGNED_AT);  // v1
-        ClaimEvent assessed = claim.assessed("700.00");                  // v2
-        send(submitted);
-        send(assessed);
+        claim.submitted();                                                  // v0, never delivered
+        ClaimEvent assigned = claim.assigned(OFFICER_MY1, ASSIGNED_AT);     // v1
+        ClaimEvent requested = claim.infoRequested();                       // v2
+        send(requested);
         send(assigned); // arrives late
-        send(claim.assessed("750.00")); // marker, v3
 
-        awaitVersion(claim, 3);
-        assertThat(summary(claim)).containsEntry("status", "ASSESSED");
-        // the late ClaimAssigned changed nothing and notified no one, but its id is recorded as handled
-        assertThat(count("SELECT count(*) FROM notifications WHERE claim_id = ?", claim.id)).isZero();
-        assertThat(count("SELECT count(*) FROM processed_events WHERE event_id = ?", assigned.eventId())).isOne();
+        await().atMost(Duration.ofSeconds(30)).until(() ->
+                count("SELECT count(*) FROM processed_events WHERE event_id = ?", assigned.eventId()) == 1);
+        // Q22: the summary stays at v2, but both events notified the claimant
+        assertThat(summary(claim)).containsEntry("claim_version", 2L).containsEntry("status", "INFO_REQUESTED");
+        assertThat(jdbc.sql("SELECT type FROM notifications WHERE claim_id = ? ORDER BY type").param(claim.id)
+                .query(String.class).list()).containsExactly("CLAIM_ASSIGNED", "INFO_REQUESTED");
     }
 
     @Test

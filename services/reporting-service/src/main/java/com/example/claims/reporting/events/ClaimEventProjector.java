@@ -17,8 +17,9 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Applies {@code claims.events} to the read model (design section 7, "Consumer"), one event per DB
- * transaction: duplicate event ids and older claim versions are skipped, otherwise the summary row is
- * overwritten with the snapshot and a notification added where the event needs one.
+ * transaction: duplicate event ids are skipped entirely; otherwise the summary row is overwritten with
+ * the snapshot if it is newer than the stored version, and a notification is added where the event
+ * needs one, whatever its version (Q22).
  * <p>
  * The listener commits the Kafka offset only after this method returns, i.e. after the DB commit
  * ({@code ack-mode: record}). A crash in between re-delivers the event, and the event id check drops it.
@@ -53,7 +54,8 @@ public class ClaimEventProjector {
             return;
         }
         ClaimSnapshot c = event.claim();
-        int applied = jdbc.sql("""
+        // the version check only guards the summary: an older event doesn't overwrite it
+        jdbc.sql("""
                         INSERT INTO claim_summary (claim_id, claim_number, type, market, currency, status, claimant_id,
                             assigned_officer_id, assigned_officer_name, claimed_amount, reserve_amount, settled_amount,
                             submitted_at, assigned_at, closed_at, claim_version, last_event_at, updated_at)
@@ -74,9 +76,7 @@ public class ClaimEventProjector {
                         c.settledAmount(), utc(c.createdAt()), utc(c.assignedAt()), utc(c.closedAt()), c.version(),
                         utc(event.occurredAt()), now)
                 .update();
-        if (applied == 0) {
-            return; // not newer than what we have (out of order)
-        }
+        // ...but notifications are per event (Q22), so one arriving out of order still notifies
         notifyFor(event, now);
     }
 

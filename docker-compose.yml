@@ -52,15 +52,20 @@ services:
       retries: 15
       start_period: 15s
 
-  # One-shot: creates the topic (auto-create is off), then exits
+  # One-shot: creates the topics (auto-create is off), then exits.
+  # claims.events.DLT = dead-letter topic for events reporting can't process (design section 7)
   kafka-init:
     image: apache/kafka:4.4.0
     depends_on:
       kafka:
         condition: service_healthy
-    entrypoint: ["/opt/kafka/bin/kafka-topics.sh"]
-    command: ["--bootstrap-server", "kafka:29092", "--create", "--if-not-exists",
-              "--topic", "claims.events", "--partitions", "3", "--replication-factor", "1"]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for topic in claims.events claims.events.DLT; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists \
+            --topic "$$topic" --partitions 3 --replication-factor 1 || exit 1
+        done
     restart: "no"
 
 volumes:

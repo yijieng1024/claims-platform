@@ -14,6 +14,24 @@ spring:
   flyway:
     schemas: reporting
     default-schema: reporting
+  jackson:
+    deserialization:
+      # events may carry fields this version doesn't know (e.g. outbox rows written with the older,
+      # bigger snapshot); ignore them instead of failing (design section 7)
+      fail-on-unknown-properties: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: reporting-service
+      # a new consumer group reads claims.events from the start, so the read model can be rebuilt
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      # commit each record's offset after the listener (and its DB transaction) returned
+      ack-mode: record
+    producer:
+      # used only to move failed records to claims.events.DLT
+      acks: all
   security:
     oauth2:
       resourceserver:

@@ -11,6 +11,12 @@ spring:
     hikari:
       # unqualified SQL resolves to our schema whatever the DB user's search_path is
       schema: claims
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate   # Flyway owns the schema
+    properties:
+      hibernate.default_schema: claims
   flyway:
     schemas: claims
     default-schema: claims

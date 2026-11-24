@@ -29,10 +29,16 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        <!-- DataSource; JPA comes with the first entities -->
+        <!-- claims, history, information requests, outbox as JPA entities (@Version for optimistic locking);
+             also brings JDBC / JdbcClient, still used for the read-only policies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <!-- event envelope written to the outbox (design section 7) -->
+        <dependency>
+            <groupId>com.example.claims</groupId>
+            <artifactId>claims-events</artifactId>
         </dependency>
         <!-- schema migrations -->
         <dependency>

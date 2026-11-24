@@ -1,0 +1,106 @@
+package com.example.claims.claims.claim;
+
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.data.domain.Page;
+
+/** Request and response bodies of the claims API. Amounts fit numeric(15,2). */
+final class ClaimDtos {
+
+    private ClaimDtos() {
+    }
+
+    record OpenClaimRequest(
+            @NotNull UUID policyId,
+            @NotNull LocalDate incidentDate,
+            @NotBlank @Size(max = 255) String incidentLocation,
+            @NotBlank @Size(max = 4000) String description,
+            @NotNull @Positive @Digits(integer = 13, fraction = 2) BigDecimal claimedAmount) {
+    }
+
+    record InformationRequestBody(@NotBlank @Size(max = 2000) String question) {
+    }
+
+    record InformationResponseBody(@NotBlank @Size(max = 4000) String responseText) {
+    }
+
+    record AssessmentRequest(
+            @NotNull @Positive @Digits(integer = 13, fraction = 2) BigDecimal reserveAmount,
+            @Size(max = 2000) String note) {
+    }
+
+    record SettlementRequest(
+            @NotNull @PositiveOrZero @Digits(integer = 13, fraction = 2) BigDecimal settledAmount,
+            @Size(max = 2000) String note) {
+    }
+
+    record RejectionRequest(@NotBlank @Size(max = 2000) String reason) {
+    }
+
+    /** List row: no description. */
+    record ClaimSummary(UUID id, String claimNumber, String policyNumber, String type, String market,
+            String currency, LocalDate incidentDate, BigDecimal claimedAmount, BigDecimal reserveAmount,
+            BigDecimal settledAmount, ClaimStatus status, String claimantName, String assignedOfficerName,
+            Instant createdAt, Instant updatedAt) {
+
+        static ClaimSummary of(Claim c) {
+            return new ClaimSummary(c.getId(), c.getClaimNumber(), c.getPolicyNumber(), c.getType(), c.getMarket(),
+                    c.getCurrency(), c.getIncidentDate(), c.getClaimedAmount(), c.getReserveAmount(),
+                    c.getSettledAmount(), c.getStatus(), c.getClaimantName(), c.getAssignedOfficerName(),
+                    c.getCreatedAt(), c.getUpdatedAt());
+        }
+    }
+
+    record ClaimDetail(UUID id, String claimNumber, long version, ClaimStatus status, UUID policyId,
+            String policyNumber, BigDecimal sumInsured, String type, String market, String currency,
+            LocalDate incidentDate, String incidentLocation, String description, BigDecimal claimedAmount,
+            BigDecimal reserveAmount, BigDecimal settledAmount, String rejectionReason, UUID claimantId,
+            String claimantName, UUID assignedOfficerId, String assignedOfficerName, Instant createdAt,
+            Instant updatedAt, Instant closedAt, InformationRequestView openInformationRequest) {
+
+        static ClaimDetail of(Claim c, BigDecimal sumInsured, InformationRequestView openRequest) {
+            return new ClaimDetail(c.getId(), c.getClaimNumber(), c.getVersion(), c.getStatus(), c.getPolicyId(),
+                    c.getPolicyNumber(), sumInsured, c.getType(), c.getMarket(), c.getCurrency(), c.getIncidentDate(),
+                    c.getIncidentLocation(), c.getDescription(), c.getClaimedAmount(), c.getReserveAmount(),
+                    c.getSettledAmount(), c.getRejectionReason(), c.getClaimantId(), c.getClaimantName(),
+                    c.getAssignedOfficerId(), c.getAssignedOfficerName(), c.getCreatedAt(), c.getUpdatedAt(),
+                    c.getClosedAt(), openRequest);
+        }
+    }
+
+    record HistoryEntry(ClaimStatus fromStatus, ClaimStatus toStatus, UUID changedById, String changedByName,
+            String changedByRole, String note, Instant changedAt) {
+
+        static HistoryEntry of(StatusHistory h) {
+            return new HistoryEntry(h.getFromStatus(), h.getToStatus(), h.getChangedById(), h.getChangedByName(),
+                    h.getChangedByRole(), h.getNote(), h.getChangedAt());
+        }
+    }
+
+    record InformationRequestView(UUID id, String question, InformationRequest.Status status, String responseText,
+            UUID requestedById, Instant createdAt, Instant respondedAt) {
+
+        static InformationRequestView of(InformationRequest r) {
+            return new InformationRequestView(r.getId(), r.getQuestion(), r.getStatus(), r.getResponseText(),
+                    r.getRequestedById(), r.getCreatedAt(), r.getRespondedAt());
+        }
+    }
+
+    /** Stable JSON for a page (Spring's PageImpl JSON is not a guaranteed format). */
+    record PageResponse<T>(List<T> content, int page, int size, long totalElements, int totalPages) {
+
+        static <T> PageResponse<T> of(Page<T> p) {
+            return new PageResponse<>(p.getContent(), p.getNumber(), p.getSize(), p.getTotalElements(),
+                    p.getTotalPages());
+        }
+    }
+}

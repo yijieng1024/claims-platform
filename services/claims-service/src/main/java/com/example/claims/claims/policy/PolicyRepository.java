@@ -39,6 +39,19 @@ public class PolicyRepository {
                 .list();
     }
 
+    public Optional<Policy> findById(UUID id) {
+        return jdbc.sql(SELECT + "WHERE id = :id").param("id", id).query(Policy.class).optional();
+    }
+
+    /** The policy only if its holder email is {@code email}: a claimant may only claim on their own policies. */
+    public Optional<Policy> findByIdAndHolderEmail(UUID id, String email) {
+        return jdbc.sql(SELECT + "WHERE id = :id AND holder_email = lower(trim(:email))")
+                .param("id", id)
+                .param("email", email)
+                .query(Policy.class)
+                .optional();
+    }
+
     /** Registration check (design section 4): exists, not cancelled, holder email matches. Expired still counts. */
     public Optional<String> findHolderNameForRegistration(String policyNumber, String email) {
         return jdbc.sql("""

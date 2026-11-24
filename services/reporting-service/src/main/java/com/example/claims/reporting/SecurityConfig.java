@@ -10,6 +10,10 @@ class SecurityConfig {
 
     @Bean
     UrlRules urlRules() {
-        return auth -> auth.anyRequest().authenticated();
+        return auth -> auth
+                .requestMatchers("/api/reports/exposure").hasRole("MANAGER")
+                // which market an officer sees is decided in ReportController
+                .requestMatchers("/api/reports/**").hasAnyRole("OFFICER", "MANAGER")
+                .anyRequest().hasAnyRole("CLAIMANT", "OFFICER", "MANAGER");
     }
 }

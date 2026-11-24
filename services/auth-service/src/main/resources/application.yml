@@ -1,0 +1,30 @@
+server:
+  port: ${AUTH_PORT:8081}
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: ${AUTH_DB_URL:jdbc:postgresql://localhost:5433/claims_platform}
+    username: ${AUTH_DB_USER:auth_svc}
+    password: ${AUTH_DB_PASSWORD:auth_svc}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.default_schema: auth
+  flyway:
+    schemas: auth
+    default-schema: auth
+
+auth:
+  jwt:
+    # PKCS#8 PEM private key. Generated on first start if missing. Keep it outside the repo.
+    key-path: ${AUTH_JWT_KEY_PATH:${user.home}/.claims-platform/auth-jwt-key.pem}
+    issuer: ${AUTH_JWT_ISSUER:http://localhost:8081}
+    ttl: 1h
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

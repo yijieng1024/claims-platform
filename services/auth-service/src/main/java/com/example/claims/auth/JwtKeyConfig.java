@@ -63,10 +63,10 @@ class JwtKeyConfig {
     }
 
     private static RSAPrivateCrtKey read(Path path) throws Exception {
-        String base64 = Files.readString(path).replaceAll("-----[A-Z ]+-----", "").replaceAll("\s", "");
+        String base64 = Files.readString(path).replaceAll("-----[A-Z ]+-----", ""); // MIME decoder skips line breaks
         log.info("Loaded JWT signing key from {}", path.toAbsolutePath());
         return (RSAPrivateCrtKey) KeyFactory.getInstance("RSA")
-                .generatePrivate(new PKCS8EncodedKeySpec(Base64.getDecoder().decode(base64)));
+                .generatePrivate(new PKCS8EncodedKeySpec(Base64.getMimeDecoder().decode(base64)));
     }
 
     private static RSAPrivateCrtKey generateAndSave(Path path) throws Exception {

@@ -89,7 +89,7 @@ class PolicyApiTest {
     void serviceTokenCannotCallPublicApi() throws Exception {
         mvc.perform(get("/api/policies/my").with(service()))
                 .andExpect(status().isForbidden());
-        mvc.perform(get("/api/claims/whoami").with(service()))
+        mvc.perform(get("/api/claims/my").with(service()))
                 .andExpect(status().isForbidden());
     }
 

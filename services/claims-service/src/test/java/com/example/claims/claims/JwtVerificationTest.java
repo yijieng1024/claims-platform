@@ -1,11 +1,13 @@
 package com.example.claims.claims;
 
-import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.claims.claims.policy.PolicyController;
+import com.example.claims.claims.policy.PolicyRepository;
 import com.example.claims.web.WebCommonAutoConfiguration;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -20,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,12 +32,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
  * Runs the real resource-server config against a stand-in auth-service JWKS endpoint (no DB needed).
  */
-@WebMvcTest(WhoAmIController.class)
+@WebMvcTest(PolicyController.class)
 @Import(SecurityConfig.class)
 @ImportAutoConfiguration(WebCommonAutoConfiguration.class)
 class JwtVerificationTest {
@@ -58,37 +62,46 @@ class JwtVerificationTest {
 
     @Autowired
     MockMvc mvc;
+    @MockitoBean
+    PolicyRepository policies;
 
     @Test
     void tokenFromAuthServiceKeyIsAccepted() throws Exception {
-        mvc.perform(get("/api/claims/whoami").header("Authorization", "Bearer " + token(trustedKey)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role").value("OFFICER"))
-                .andExpect(jsonPath("$.market").value("MY"))
-                .andExpect(jsonPath("$.authorities", hasItem("ROLE_OFFICER")));
+        when(policies.findByHolderEmail("claimant1@example.com")).thenReturn(List.of());
+        // /api/policies/** needs ROLE_CLAIMANT, so a 200 also proves the role claim was mapped
+        mvc.perform(get("/api/policies/my").header("Authorization", "Bearer " + token(trustedKey, "CLAIMANT")))
+                .andExpect(status().isOk());
+        verify(policies).findByHolderEmail("claimant1@example.com");
+    }
+
+    @Test
+    void roleClaimDecidesAccess() throws Exception {
+        mvc.perform(get("/api/policies/my").header("Authorization", "Bearer " + token(trustedKey, "OFFICER")))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
     }
 
     @Test
     void tokenSignedWithDifferentKeyIsRejected() throws Exception {
-        mvc.perform(get("/api/claims/whoami").header("Authorization", "Bearer " + token(otherKey)))
+        mvc.perform(get("/api/policies/my").header("Authorization", "Bearer " + token(otherKey, "CLAIMANT")))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
     }
 
     @Test
     void missingTokenIsRejected() throws Exception {
-        mvc.perform(get("/api/claims/whoami"))
+        mvc.perform(get("/api/policies/my"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
     }
 
-    private static String token(RSAKey key) throws Exception {
+    private static String token(RSAKey key, String role) throws Exception {
         var claims = new JWTClaimsSet.Builder()
                 .issuer(ISSUER)
-                .subject("00000000-0000-0000-0001-000000000011")
-                .claim("role", "OFFICER")
-                .claim("name", "Demo Officer MY-1")
-                .claim("market", "MY")
+                .subject("00000000-0000-0000-0002-000000000001")
+                .claim("role", role)
+                .claim("name", "Demo Claimant 1")
+                .claim("email", "claimant1@example.com")
                 .issueTime(new Date())
                 .expirationTime(Date.from(Instant.now().plusSeconds(3600)))
                 .build();

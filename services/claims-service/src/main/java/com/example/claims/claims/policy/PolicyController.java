@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Access rules (CLAIMANT for /api/policies, SERVICE for /internal) are in SecurityConfig. */
 @RestController
-class PolicyController {
+public class PolicyController {
 
     record VerifyRequest(@NotBlank @Size(max = 30) String policyNumber, @NotBlank @Size(max = 255) String email) {
     }

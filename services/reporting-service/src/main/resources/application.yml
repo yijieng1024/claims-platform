@@ -1,0 +1,27 @@
+server:
+  port: ${REPORTING_PORT:8083}
+
+spring:
+  application:
+    name: reporting-service
+  datasource:
+    url: ${REPORTING_DB_URL:jdbc:postgresql://localhost:5433/claims_platform}
+    username: ${REPORTING_DB_USER:reporting_svc}
+    password: ${REPORTING_DB_PASSWORD:reporting_svc}
+  flyway:
+    schemas: reporting
+    default-schema: reporting
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # keys are fetched on the first request that needs them, so startup doesn't need auth-service
+          jwk-set-uri: ${AUTH_JWKS_URI:http://localhost:8081/.well-known/jwks.json}
+          # with jwk-set-uri set, this is only used to check the iss claim (no discovery call)
+          issuer-uri: ${AUTH_JWT_ISSUER:http://localhost:8081}
+          authorities-claim-name: role
+          authority-prefix: ROLE_
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

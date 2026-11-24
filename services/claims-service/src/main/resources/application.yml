@@ -1,0 +1,27 @@
+server:
+  port: ${CLAIMS_PORT:8082}
+
+spring:
+  application:
+    name: claims-service
+  datasource:
+    url: ${CLAIMS_DB_URL:jdbc:postgresql://localhost:5433/claims_platform}
+    username: ${CLAIMS_DB_USER:claims_svc}
+    password: ${CLAIMS_DB_PASSWORD:claims_svc}
+  flyway:
+    schemas: claims
+    default-schema: claims
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # keys are fetched on the first request that needs them, so startup doesn't need auth-service
+          jwk-set-uri: ${AUTH_JWKS_URI:http://localhost:8081/.well-known/jwks.json}
+          # with jwk-set-uri set, this is only used to check the iss claim (no discovery call)
+          issuer-uri: ${AUTH_JWT_ISSUER:http://localhost:8081}
+          authorities-claim-name: role
+          authority-prefix: ROLE_
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

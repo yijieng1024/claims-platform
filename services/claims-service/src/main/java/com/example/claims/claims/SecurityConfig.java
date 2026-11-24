@@ -10,6 +10,10 @@ class SecurityConfig {
 
     @Bean
     UrlRules urlRules() {
-        return auth -> auth.anyRequest().authenticated();
+        return auth -> auth
+                // service tokens (auth-service) may call /internal/** and nothing else (design section 4)
+                .requestMatchers("/internal/**").hasRole("SERVICE")
+                .requestMatchers("/api/policies/**").hasRole("CLAIMANT")
+                .anyRequest().hasAnyRole("CLAIMANT", "OFFICER", "MANAGER");
     }
 }

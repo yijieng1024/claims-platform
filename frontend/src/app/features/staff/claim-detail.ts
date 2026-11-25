@@ -19,6 +19,7 @@ import {
 import { AuthService } from '../../core/auth.service';
 import { ErrorService } from '../../core/error.service';
 import { saveBlob } from '../../shared/download';
+import { isImage, openImagePreview } from '../../shared/image-preview-dialog';
 import { MoneyPipe } from '../../shared/money.pipe';
 import { StatusChip } from '../../shared/status-chip';
 import { Timeline } from '../../shared/timeline';
@@ -135,6 +136,13 @@ export class StaffClaimDetail implements OnInit {
       confirmLabel: 'Reject claim',
       destructive: true,
     }, (r) => this.run(this.claimsApi.reject(this.id(), { reason: r.text }), 'Claim rejected.'));
+  }
+
+  readonly isImage = isImage;
+
+  /** Opens an uploaded photo in a pop-up. */
+  preview(doc: DocumentView): void {
+    openImagePreview(this.dialog, this.id(), doc);
   }
 
   download(doc: DocumentView): void {

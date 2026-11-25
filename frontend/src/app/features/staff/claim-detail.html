@@ -155,8 +155,14 @@
             <td mat-cell *matCellDef="let d" class="num">{{ d.uploadedAt | date: 'medium' }}</td>
           </ng-container>
           <ng-container matColumnDef="download">
-            <th mat-header-cell *matHeaderCellDef class="num-col">Download</th>
+            <th mat-header-cell *matHeaderCellDef class="num-col">Open</th>
             <td mat-cell *matCellDef="let d" class="num-col">
+              <!-- images open in a pop-up; PDFs can only be downloaded -->
+              @if (isImage(d)) {
+                <button matIconButton (click)="preview(d)" [attr.aria-label]="'Preview ' + d.originalFilename">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+              }
               <button matIconButton (click)="download(d)" [attr.aria-label]="'Download ' + d.originalFilename">
                 <mat-icon>download</mat-icon>
               </button>

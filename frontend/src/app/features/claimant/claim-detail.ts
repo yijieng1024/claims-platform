@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -20,6 +21,7 @@ import {
 } from '../../api/claims';
 import { ErrorService } from '../../core/error.service';
 import { saveBlob } from '../../shared/download';
+import { isImage, openImagePreview } from '../../shared/image-preview-dialog';
 import { FilePicker } from '../../shared/file-picker';
 import { MoneyPipe } from '../../shared/money.pipe';
 import { StatusChip } from '../../shared/status-chip';
@@ -47,6 +49,7 @@ export class ClaimDetailPage implements OnInit {
   private readonly claimsApi = inject(ClaimControllerService);
   private readonly documentsApi = inject(DocumentControllerService);
   private readonly errors = inject(ErrorService);
+  private readonly dialog = inject(MatDialog);
 
   /** The :id from the URL (route parameters become inputs, see withComponentInputBinding in app.config.ts). */
   readonly id = input.required<string>();
@@ -117,6 +120,13 @@ export class ClaimDetailPage implements OnInit {
     }
     this.busy.set(false);
     this.load();
+  }
+
+  readonly isImage = isImage;
+
+  /** Opens an uploaded photo in a pop-up. */
+  preview(doc: DocumentView): void {
+    openImagePreview(this.dialog, this.id(), doc);
   }
 
   download(doc: DocumentView): void {

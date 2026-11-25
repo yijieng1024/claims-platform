@@ -110,15 +110,17 @@ Every status chip shows **an icon and text**, never colour alone.
 
 - **Primary button:** `--brand` background, white text, pill. Hover: opacity 0.9. Disabled: opacity 0.6. **One primary action per view.**
 - **Secondary button:** `--brand-tint` background, `--brand` text, pill.
-- **Destructive button** (e.g. Reject): `--negative` text on `--negative` @10%, pill. Always behind a confirm dialog.
+- **Destructive button** (e.g. Reject): `--negative` text on `--negative` @10%, pill. The reason dialog itself is the confirmation step (it states the claim closes and can't be undone).
+- **Positive final action** (Settle): `--positive` button, white text, pill. The "can't be undone" note in the dialog uses normal text with an info icon — not red (not destructive) and not green text (it's a caution, not a success).
 - **Inputs:** `--bg` background, `--line` border, 12px radius, ~46px tall. Focus: `box-shadow: 0 0 0 3px var(--brand-tint)` plus border in `--brand`. Never remove focus indication without this replacement.
+- **Documents table:** the last column is "Open". Every document has Download; JPEG/PNG documents also have an eye button that opens an **image preview dialog** (filename as title, image up to 70% of screen height, Download / Close, closes on Escape or outside click). The image is fetched through `HttpClient` so the token is sent (a plain `<img src="/api/...">` would be refused), and its object URL is released when the dialog closes. PDFs have Download only.
 - **Form errors:** field validation errors appear under the field (`--negative`). Login failure ("Invalid email or password") is shown inline and marks **both** fields, because the backend deliberately doesn't say which one was wrong; editing either field clears both. Other errors (e.g. a service down) use the snackbar.
 - **Required fields:** the required asterisk is `--negative` on every form; Material's built-in required attribute still tells screen readers.
 - **Password fields:** an eye toggle (`type="button"`, never submits) switching between hidden and visible text, with `aria-label` "Show password" / "Hide password". Same on login and register.
 - **Tables:** inside a flat card; header row on `--surface-2`, 12px muted labels; rows separated by `--line` hairlines; row hover `--surface-2`; numeric columns right-aligned with `tabular-nums`.
 - **KPI cards** (dashboard): flat card, small muted label, large tabular number, optional caption line underneath.
 - **Tab rails / segmented filters:** `--surface-2` pill container with the active segment on `--surface-solid` and a soft shadow.
-- **Timeline** (claim detail): horizontal, directly under the claim number and status, oldest step on the left. Finished steps: status chip, date/time, who, note; joined by a solid `--brand` line; the current step has a filled dot with a soft ring. Upcoming steps (normal path from the state machine) in muted grey with **dashed** dots and labels — dashed is the non-colour signal. The final step is labelled "Settled or rejected". Each step ≥ 180px; scrolls sideways (keyboard-scrollable) when it doesn't fit. Used on both claimant and staff claim detail.
+- **Timeline** (claim detail): horizontal, directly under the claim number and status, oldest step on the left. Finished steps: status chip, date/time, who, note; joined by a solid `--brand` line; the current step has a filled dot with a soft ring. Upcoming steps (normal path from the state machine) in muted grey with **dashed** dots and labels — dashed is the non-colour signal. The final step is labelled "Settled or rejected". Steps share the card width and their text wraps; the timeline never scrolls sideways. Used on both claimant and staff claim detail.
 - **Empty states:** centred muted text + one primary action.
 - **Snackbar:** keep Material's default dark snackbar (good contrast on any page).
 

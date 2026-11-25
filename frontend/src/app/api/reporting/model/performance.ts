@@ -11,7 +11,7 @@ import { OfficerPerformance } from './officer-performance';
 
 
 export interface Performance { 
-    asOf?: string;
-    officers?: Array<OfficerPerformance>;
+    asOf?: string | null;
+    officers: Array<OfficerPerformance>;
 }
 

@@ -42,9 +42,9 @@ export class AuthService {
     return this.api.login({ email, password }).pipe(
       tap((res) => {
         const session: StoredSession = {
-          token: res.accessToken!,
-          expiresAt: Date.now() + (res.expiresIn ?? 0) * 1000,
-          user: res.user!,
+          token: res.accessToken,
+          expiresAt: Date.now() + res.expiresIn * 1000,
+          user: res.user,
         };
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
         this.session.set(session);

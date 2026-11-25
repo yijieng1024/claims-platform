@@ -195,13 +195,25 @@
             "type": "integer",
             "format": "int64"
           }
-        }
+        },
+        "required": [
+          "assessed",
+          "infoRequested",
+          "market",
+          "officerId",
+          "officerName",
+          "openClaims",
+          "underReview"
+        ]
       },
       "Workload": {
         "type": "object",
         "properties": {
           "asOf": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "officers": {
@@ -210,7 +222,10 @@
               "$ref": "#/components/schemas/OfficerWorkload"
             }
           }
-        }
+        },
+        "required": [
+          "officers"
+        ]
       },
       "Amount": {
         "type": "object",
@@ -221,7 +236,11 @@
           "amount": {
             "type": "number"
           }
-        }
+        },
+        "required": [
+          "amount",
+          "currency"
+        ]
       },
       "OfficerPerformance": {
         "type": "object",
@@ -249,7 +268,10 @@
             "format": "int64"
           },
           "averageDaysToClose": {
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "settledAmounts": {
             "type": "array",
@@ -257,13 +279,25 @@
               "$ref": "#/components/schemas/Amount"
             }
           }
-        }
+        },
+        "required": [
+          "closed",
+          "market",
+          "officerId",
+          "officerName",
+          "rejected",
+          "settled",
+          "settledAmounts"
+        ]
       },
       "Performance": {
         "type": "object",
         "properties": {
           "asOf": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "officers": {
@@ -272,7 +306,10 @@
               "$ref": "#/components/schemas/OfficerPerformance"
             }
           }
-        }
+        },
+        "required": [
+          "officers"
+        ]
       },
       "MarketCount": {
         "type": "object",
@@ -284,13 +321,20 @@
             "type": "integer",
             "format": "int64"
           }
-        }
+        },
+        "required": [
+          "count",
+          "market"
+        ]
       },
       "Outstanding": {
         "type": "object",
         "properties": {
           "asOf": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "byStatus": {
@@ -305,7 +349,11 @@
               "$ref": "#/components/schemas/MarketCount"
             }
           }
-        }
+        },
+        "required": [
+          "byMarket",
+          "byStatus"
+        ]
       },
       "StatusCount": {
         "type": "object",
@@ -317,7 +365,11 @@
             "type": "integer",
             "format": "int64"
           }
-        }
+        },
+        "required": [
+          "count",
+          "status"
+        ]
       },
       "CurrencyExposure": {
         "type": "object",
@@ -339,13 +391,23 @@
           "unreservedClaimedAmount": {
             "type": "number"
           }
-        }
+        },
+        "required": [
+          "currency",
+          "reservedCount",
+          "reservedExposure",
+          "unreservedClaimedAmount",
+          "unreservedCount"
+        ]
       },
       "Exposure": {
         "type": "object",
         "properties": {
           "asOf": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "currencies": {
@@ -354,7 +416,10 @@
               "$ref": "#/components/schemas/CurrencyExposure"
             }
           }
-        }
+        },
+        "required": [
+          "currencies"
+        ]
       },
       "NotificationView": {
         "type": "object",
@@ -381,10 +446,21 @@
             "format": "date-time"
           },
           "readAt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
-        }
+        },
+        "required": [
+          "claimId",
+          "claimNumber",
+          "createdAt",
+          "id",
+          "message",
+          "type"
+        ]
       }
     },
     "securitySchemes": {

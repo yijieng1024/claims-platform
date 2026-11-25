@@ -11,9 +11,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 
-/** Request and response bodies of the claims API. Amounts fit numeric(15,2). */
+/**
+ * Request and response bodies of the claims API. Amounts fit numeric(15,2).
+ * In the OpenAPI spec every field is required unless marked {@code @Nullable} (Q28, see web-common).
+ */
 final class ClaimDtos {
 
     private ClaimDtos() {
@@ -35,12 +39,12 @@ final class ClaimDtos {
 
     record AssessmentRequest(
             @NotNull @Positive @Digits(integer = 13, fraction = 2) BigDecimal reserveAmount,
-            @Size(max = 2000) String note) {
+            @Nullable @Size(max = 2000) String note) {
     }
 
     record SettlementRequest(
             @NotNull @PositiveOrZero @Digits(integer = 13, fraction = 2) BigDecimal settledAmount,
-            @Size(max = 2000) String note) {
+            @Nullable @Size(max = 2000) String note) {
     }
 
     record RejectionRequest(@NotBlank @Size(max = 2000) String reason) {
@@ -48,8 +52,9 @@ final class ClaimDtos {
 
     /** List row: no description. */
     record ClaimSummary(UUID id, String claimNumber, String policyNumber, String type, String market,
-            String currency, LocalDate incidentDate, BigDecimal claimedAmount, BigDecimal reserveAmount,
-            BigDecimal settledAmount, ClaimStatus status, String claimantName, String assignedOfficerName,
+            String currency, LocalDate incidentDate, BigDecimal claimedAmount, @Nullable BigDecimal reserveAmount,
+            @Nullable BigDecimal settledAmount, ClaimStatus status, String claimantName,
+            @Nullable String assignedOfficerName,
             Instant createdAt, Instant updatedAt) {
 
         static ClaimSummary of(Claim c) {
@@ -63,9 +68,10 @@ final class ClaimDtos {
     record ClaimDetail(UUID id, String claimNumber, long version, ClaimStatus status, UUID policyId,
             String policyNumber, BigDecimal sumInsured, String type, String market, String currency,
             LocalDate incidentDate, String incidentLocation, String description, BigDecimal claimedAmount,
-            BigDecimal reserveAmount, BigDecimal settledAmount, String rejectionReason, UUID claimantId,
-            String claimantName, UUID assignedOfficerId, String assignedOfficerName, Instant assignedAt,
-            Instant createdAt, Instant updatedAt, Instant closedAt, InformationRequestView openInformationRequest) {
+            @Nullable BigDecimal reserveAmount, @Nullable BigDecimal settledAmount, @Nullable String rejectionReason,
+            UUID claimantId, String claimantName, @Nullable UUID assignedOfficerId, @Nullable String assignedOfficerName,
+            @Nullable Instant assignedAt, Instant createdAt, Instant updatedAt, @Nullable Instant closedAt,
+            @Nullable InformationRequestView openInformationRequest) {
 
         static ClaimDetail of(Claim c, BigDecimal sumInsured, InformationRequestView openRequest) {
             return new ClaimDetail(c.getId(), c.getClaimNumber(), c.getVersion(), c.getStatus(), c.getPolicyId(),
@@ -78,8 +84,8 @@ final class ClaimDtos {
         }
     }
 
-    record HistoryEntry(ClaimStatus fromStatus, ClaimStatus toStatus, UUID changedById, String changedByName,
-            String changedByRole, String note, Instant changedAt) {
+    record HistoryEntry(@Nullable ClaimStatus fromStatus, ClaimStatus toStatus, UUID changedById, String changedByName,
+            String changedByRole, @Nullable String note, Instant changedAt) {
 
         static HistoryEntry of(StatusHistory h) {
             return new HistoryEntry(h.getFromStatus(), h.getToStatus(), h.getChangedById(), h.getChangedByName(),
@@ -87,8 +93,8 @@ final class ClaimDtos {
         }
     }
 
-    record InformationRequestView(UUID id, String question, InformationRequest.Status status, String responseText,
-            UUID requestedById, Instant createdAt, Instant respondedAt) {
+    record InformationRequestView(UUID id, String question, InformationRequest.Status status, @Nullable String responseText,
+            UUID requestedById, Instant createdAt, @Nullable Instant respondedAt) {
 
         static InformationRequestView of(InformationRequest r) {
             return new InformationRequestView(r.getId(), r.getQuestion(), r.getStatus(), r.getResponseText(),
@@ -97,7 +103,7 @@ final class ClaimDtos {
     }
 
     /** Document metadata; {@code informationRequestId} is set if it was uploaded for a request. */
-    record DocumentView(UUID id, UUID informationRequestId, String originalFilename, String contentType,
+    record DocumentView(UUID id, @Nullable UUID informationRequestId, String originalFilename, String contentType,
             long sizeBytes, UUID uploadedById, Instant uploadedAt) {
 
         static DocumentView of(ClaimDocument d) {

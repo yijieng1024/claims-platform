@@ -10,10 +10,10 @@
 
 
 export interface CurrencyExposure { 
-    currency?: string;
-    reservedExposure?: number;
-    reservedCount?: number;
-    unreservedCount?: number;
-    unreservedClaimedAmount?: number;
+    currency: string;
+    reservedExposure: number;
+    reservedCount: number;
+    unreservedCount: number;
+    unreservedClaimedAmount: number;
 }
 

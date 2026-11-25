@@ -12,8 +12,8 @@ import { StatusCount } from './status-count';
 
 
 export interface Outstanding { 
-    asOf?: string;
-    byStatus?: Array<StatusCount>;
-    byMarket?: Array<MarketCount>;
+    asOf?: string | null;
+    byStatus: Array<StatusCount>;
+    byMarket: Array<MarketCount>;
 }
 

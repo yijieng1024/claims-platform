@@ -11,7 +11,7 @@ import { CurrencyExposure } from './currency-exposure';
 
 
 export interface Exposure { 
-    asOf?: string;
-    currencies?: Array<CurrencyExposure>;
+    asOf?: string | null;
+    currencies: Array<CurrencyExposure>;
 }
 

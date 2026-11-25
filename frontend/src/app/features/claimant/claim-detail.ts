@@ -99,7 +99,7 @@ export class ClaimDetailPage implements OnInit {
   }
 
   /** "Answer to: <question>" for documents uploaded with a response. */
-  requestQuestion(requestId: string | undefined): string | undefined {
+  requestQuestion(requestId: string | null | undefined): string | undefined {
     return this.data()?.requests.find((r) => r.id === requestId)?.question;
   }
 
@@ -109,7 +109,7 @@ export class ClaimDetailPage implements OnInit {
     this.busy.set(true);
     try {
       await uploadFiles(this.documentsApi, this.id(), this.responseFiles, request.id);
-      await firstValueFrom(this.claimsApi.respond(this.id(), request.id!, { responseText: this.responseText.value }));
+      await firstValueFrom(this.claimsApi.respond(this.id(), request.id, { responseText: this.responseText.value }));
       this.responseText.reset();
       this.errors.snack('Your response was sent.');
     } catch (e) {
@@ -137,12 +137,12 @@ export class ClaimDetailPage implements OnInit {
    * then hands the file to the browser under its original name.
    */
   download(doc: DocumentView): void {
-    this.documentsApi.content(this.id(), doc.id!).subscribe({
+    this.documentsApi.content(this.id(), doc.id).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = doc.originalFilename ?? 'document';
+        a.download = doc.originalFilename;
         a.click();
         URL.revokeObjectURL(url);
       },

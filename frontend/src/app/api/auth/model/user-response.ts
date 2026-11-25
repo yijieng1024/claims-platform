@@ -10,11 +10,11 @@
 
 
 export interface UserResponse { 
-    id?: string;
-    name?: string;
-    email?: string;
-    role?: UserResponseRoleEnum;
-    market?: string;
+    id: string;
+    name: string;
+    email: string;
+    role: UserResponseRoleEnum;
+    market?: string | null;
 }
 export enum UserResponseRoleEnum {
     Claimant = 'CLAIMANT',

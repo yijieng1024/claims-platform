@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 
 /** Request/response bodies. Register has no role or name field on purpose: unknown JSON fields (e.g. an older
  * client's "name") are ignored, and the account name comes from the policy holder name (Q12). */
@@ -21,7 +22,8 @@ final class Dtos {
     record LoginRequest(@NotBlank String email, @NotBlank String password) {
     }
 
-    record UserResponse(UUID id, String name, String email, Role role, String market) {
+    /** {@code market} is set for officers only. */
+    record UserResponse(UUID id, String name, String email, Role role, @Nullable String market) {
         static UserResponse of(User u) {
             return new UserResponse(u.getId(), u.getFullName(), u.getEmail(), u.getRole(), u.getMarket());
         }

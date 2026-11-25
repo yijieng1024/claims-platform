@@ -10,17 +10,17 @@
 
 
 export interface Policy { 
-    id?: string;
-    policyNumber?: string;
-    holderName?: string;
-    productType?: string;
-    market?: string;
-    currency?: string;
-    insuredItem?: string;
-    sumInsured?: number;
-    startDate?: string;
-    endDate?: string;
-    status?: string;
-    inForceToday?: boolean;
+    id: string;
+    policyNumber: string;
+    holderName: string;
+    productType: string;
+    market: string;
+    currency: string;
+    insuredItem: string;
+    sumInsured: number;
+    startDate: string;
+    endDate: string;
+    status: string;
+    inForceToday: boolean;
 }
 

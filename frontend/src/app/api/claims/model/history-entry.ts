@@ -10,13 +10,13 @@
 
 
 export interface HistoryEntry { 
-    fromStatus?: HistoryEntryFromStatusEnum;
-    toStatus?: HistoryEntryToStatusEnum;
-    changedById?: string;
-    changedByName?: string;
-    changedByRole?: string;
-    note?: string;
-    changedAt?: string;
+    fromStatus?: HistoryEntryFromStatusEnum | null;
+    toStatus: HistoryEntryToStatusEnum;
+    changedById: string;
+    changedByName: string;
+    changedByRole: string;
+    note?: string | null;
+    changedAt: string;
 }
 export enum HistoryEntryFromStatusEnum {
     Submitted = 'SUBMITTED',

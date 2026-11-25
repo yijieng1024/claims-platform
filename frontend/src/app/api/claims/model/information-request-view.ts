@@ -10,13 +10,13 @@
 
 
 export interface InformationRequestView { 
-    id?: string;
-    question?: string;
-    status?: InformationRequestViewStatusEnum;
-    responseText?: string;
-    requestedById?: string;
-    createdAt?: string;
-    respondedAt?: string;
+    id: string;
+    question: string;
+    status: InformationRequestViewStatusEnum;
+    responseText?: string | null;
+    requestedById: string;
+    createdAt: string;
+    respondedAt?: string | null;
 }
 export enum InformationRequestViewStatusEnum {
     Open = 'OPEN',

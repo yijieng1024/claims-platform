@@ -750,9 +750,15 @@
             "type": "boolean"
           },
           "holderName": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           }
-        }
+        },
+        "required": [
+          "match"
+        ]
       },
       "OpenClaimRequest": {
         "type": "object",
@@ -846,13 +852,22 @@
             "type": "number"
           },
           "reserveAmount": {
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "settledAmount": {
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "rejectionReason": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "claimantId": {
             "type": "string",
@@ -862,14 +877,23 @@
             "type": "string"
           },
           "assignedOfficerId": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           },
           "assignedOfficerName": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "assignedAt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "createdAt": {
@@ -881,13 +905,43 @@
             "format": "date-time"
           },
           "closedAt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "openInformationRequest": {
-            "$ref": "#/components/schemas/InformationRequestView"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/InformationRequestView"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
-        }
+        },
+        "required": [
+          "claimNumber",
+          "claimantId",
+          "claimantName",
+          "claimedAmount",
+          "createdAt",
+          "currency",
+          "description",
+          "id",
+          "incidentDate",
+          "incidentLocation",
+          "market",
+          "policyId",
+          "policyNumber",
+          "status",
+          "sumInsured",
+          "type",
+          "updatedAt",
+          "version"
+        ]
       },
       "InformationRequestView": {
         "type": "object",
@@ -907,7 +961,10 @@
             ]
           },
           "responseText": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "requestedById": {
             "type": "string",
@@ -918,10 +975,20 @@
             "format": "date-time"
           },
           "respondedAt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
-        }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "question",
+          "requestedById",
+          "status"
+        ]
       },
       "SettlementRequest": {
         "type": "object",
@@ -931,7 +998,10 @@
             "minimum": 0
           },
           "note": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 2000,
             "minLength": 0
           }
@@ -987,7 +1057,10 @@
             "format": "uuid"
           },
           "informationRequestId": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           },
           "originalFilename": {
@@ -1008,7 +1081,15 @@
             "type": "string",
             "format": "date-time"
           }
-        }
+        },
+        "required": [
+          "contentType",
+          "id",
+          "originalFilename",
+          "sizeBytes",
+          "uploadedAt",
+          "uploadedById"
+        ]
       },
       "AssessmentRequest": {
         "type": "object",
@@ -1018,7 +1099,10 @@
             "exclusiveMinimum": 0
           },
           "note": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 2000,
             "minLength": 0
           }
@@ -1069,7 +1153,21 @@
           "inForceToday": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "currency",
+          "endDate",
+          "holderName",
+          "id",
+          "inForceToday",
+          "insuredItem",
+          "market",
+          "policyNumber",
+          "productType",
+          "startDate",
+          "status",
+          "sumInsured"
+        ]
       },
       "ClaimSummary": {
         "type": "object",
@@ -1101,10 +1199,16 @@
             "type": "number"
           },
           "reserveAmount": {
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "settledAmount": {
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "status": {
             "type": "string",
@@ -1121,7 +1225,10 @@
             "type": "string"
           },
           "assignedOfficerName": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "createdAt": {
             "type": "string",
@@ -1131,7 +1238,21 @@
             "type": "string",
             "format": "date-time"
           }
-        }
+        },
+        "required": [
+          "claimNumber",
+          "claimantName",
+          "claimedAmount",
+          "createdAt",
+          "currency",
+          "id",
+          "incidentDate",
+          "market",
+          "policyNumber",
+          "status",
+          "type",
+          "updatedAt"
+        ]
       },
       "PageResponseClaimSummary": {
         "type": "object",
@@ -1158,13 +1279,23 @@
             "type": "integer",
             "format": "int32"
           }
-        }
+        },
+        "required": [
+          "content",
+          "page",
+          "size",
+          "totalElements",
+          "totalPages"
+        ]
       },
       "HistoryEntry": {
         "type": "object",
         "properties": {
           "fromStatus": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "enum": [
               "SUBMITTED",
               "UNDER_REVIEW",
@@ -1196,13 +1327,23 @@
             "type": "string"
           },
           "note": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "changedAt": {
             "type": "string",
             "format": "date-time"
           }
-        }
+        },
+        "required": [
+          "changedAt",
+          "changedById",
+          "changedByName",
+          "changedByRole",
+          "toStatus"
+        ]
       }
     },
     "securitySchemes": {

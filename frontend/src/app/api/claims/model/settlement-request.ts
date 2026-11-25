@@ -11,6 +11,6 @@
 
 export interface SettlementRequest { 
     settledAmount: number;
-    note?: string;
+    note?: string | null;
 }
 

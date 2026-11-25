@@ -11,8 +11,8 @@ import { UserResponse } from './user-response';
 
 
 export interface LoginResponse { 
-    accessToken?: string;
-    expiresIn?: number;
-    user?: UserResponse;
+    accessToken: string;
+    expiresIn: number;
+    user: UserResponse;
 }
 

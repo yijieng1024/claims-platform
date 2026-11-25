@@ -11,6 +11,6 @@
 
 export interface AssessmentRequest { 
     reserveAmount: number;
-    note?: string;
+    note?: string | null;
 }
 

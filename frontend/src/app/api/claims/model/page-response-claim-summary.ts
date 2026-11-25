@@ -11,10 +11,10 @@ import { ClaimSummary } from './claim-summary';
 
 
 export interface PageResponseClaimSummary { 
-    content?: Array<ClaimSummary>;
-    page?: number;
-    size?: number;
-    totalElements?: number;
-    totalPages?: number;
+    content: Array<ClaimSummary>;
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
 }
 

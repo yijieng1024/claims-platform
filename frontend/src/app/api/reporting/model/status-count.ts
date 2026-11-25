@@ -10,7 +10,7 @@
 
 
 export interface StatusCount { 
-    status?: string;
-    count?: number;
+    status: string;
+    count: number;
 }
 

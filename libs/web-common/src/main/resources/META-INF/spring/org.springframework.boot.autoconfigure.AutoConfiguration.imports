@@ -1,1 +1,2 @@
 com.example.claims.web.WebCommonAutoConfiguration
+com.example.claims.web.OpenApiAutoConfiguration

@@ -10,7 +10,7 @@
 
 
 export interface MarketCount { 
-    market?: string;
-    count?: number;
+    market: string;
+    count: number;
 }
 

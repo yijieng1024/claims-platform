@@ -50,11 +50,11 @@ export class NewClaim {
   readonly policy = computed(() => this.policies()?.find((p) => p.id === this.policyId()));
 
   // the incident date must be inside the policy's cover period and not in the future (design §5)
-  readonly minDate = computed(() => (this.policy() ? parseLocalDate(this.policy()!.startDate!) : null));
+  readonly minDate = computed(() => (this.policy() ? parseLocalDate(this.policy()!.startDate) : null));
   readonly maxDate = computed(() => {
     const p = this.policy();
     if (!p) return null;
-    const end = parseLocalDate(p.endDate!);
+    const end = parseLocalDate(p.endDate);
     return end < today() ? end : today();
   });
 
@@ -87,7 +87,7 @@ export class NewClaim {
         claimedAmount: v.claimedAmount!,
       })
       .subscribe({
-        next: (claim) => this.uploadThenOpen(claim.id!, claim.claimNumber!),
+        next: (claim) => this.uploadThenOpen(claim.id, claim.claimNumber),
         error: (err) => {
           this.busy.set(false);
           this.errors.show(err, this.form);

@@ -11,32 +11,32 @@ import { InformationRequestView } from './information-request-view';
 
 
 export interface ClaimDetail { 
-    id?: string;
-    claimNumber?: string;
-    version?: number;
-    status?: ClaimDetailStatusEnum;
-    policyId?: string;
-    policyNumber?: string;
-    sumInsured?: number;
-    type?: string;
-    market?: string;
-    currency?: string;
-    incidentDate?: string;
-    incidentLocation?: string;
-    description?: string;
-    claimedAmount?: number;
-    reserveAmount?: number;
-    settledAmount?: number;
-    rejectionReason?: string;
-    claimantId?: string;
-    claimantName?: string;
-    assignedOfficerId?: string;
-    assignedOfficerName?: string;
-    assignedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    closedAt?: string;
-    openInformationRequest?: InformationRequestView;
+    id: string;
+    claimNumber: string;
+    version: number;
+    status: ClaimDetailStatusEnum;
+    policyId: string;
+    policyNumber: string;
+    sumInsured: number;
+    type: string;
+    market: string;
+    currency: string;
+    incidentDate: string;
+    incidentLocation: string;
+    description: string;
+    claimedAmount: number;
+    reserveAmount?: number | null;
+    settledAmount?: number | null;
+    rejectionReason?: string | null;
+    claimantId: string;
+    claimantName: string;
+    assignedOfficerId?: string | null;
+    assignedOfficerName?: string | null;
+    assignedAt?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    closedAt?: string | null;
+    openInformationRequest?: InformationRequestView | null;
 }
 export enum ClaimDetailStatusEnum {
     Submitted = 'SUBMITTED',

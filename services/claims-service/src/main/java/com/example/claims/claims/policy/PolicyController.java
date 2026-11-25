@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +23,7 @@ public class PolicyController {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    record VerifyResponse(boolean match, String holderName) {
+    record VerifyResponse(boolean match, @Nullable String holderName) {
     }
 
     private final PolicyRepository policies;

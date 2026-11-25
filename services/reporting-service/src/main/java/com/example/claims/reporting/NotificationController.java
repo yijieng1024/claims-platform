@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,7 +29,7 @@ class NotificationController {
     }
 
     record NotificationView(UUID id, UUID claimId, String claimNumber, String type, String message,
-            OffsetDateTime createdAt, OffsetDateTime readAt) {
+            OffsetDateTime createdAt, @Nullable OffsetDateTime readAt) {
     }
 
     @Operation(summary = "My notifications: unread first, newest first, at most 50")

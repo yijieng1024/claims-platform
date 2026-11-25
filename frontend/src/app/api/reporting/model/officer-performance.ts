@@ -11,13 +11,13 @@ import { Amount } from './amount';
 
 
 export interface OfficerPerformance { 
-    officerId?: string;
-    officerName?: string;
-    market?: string;
-    closed?: number;
-    settled?: number;
-    rejected?: number;
-    averageDaysToClose?: number;
-    settledAmounts?: Array<Amount>;
+    officerId: string;
+    officerName: string;
+    market: string;
+    closed: number;
+    settled: number;
+    rejected: number;
+    averageDaysToClose?: number | null;
+    settledAmounts: Array<Amount>;
 }
 

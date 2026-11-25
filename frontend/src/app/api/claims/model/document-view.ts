@@ -10,12 +10,12 @@
 
 
 export interface DocumentView { 
-    id?: string;
-    informationRequestId?: string;
-    originalFilename?: string;
-    contentType?: string;
-    sizeBytes?: number;
-    uploadedById?: string;
-    uploadedAt?: string;
+    id: string;
+    informationRequestId?: string | null;
+    originalFilename: string;
+    contentType: string;
+    sizeBytes: number;
+    uploadedById: string;
+    uploadedAt: string;
 }
 

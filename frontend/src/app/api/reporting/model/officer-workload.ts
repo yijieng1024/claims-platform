@@ -10,12 +10,12 @@
 
 
 export interface OfficerWorkload { 
-    officerId?: string;
-    officerName?: string;
-    market?: string;
-    openClaims?: number;
-    underReview?: number;
-    infoRequested?: number;
-    assessed?: number;
+    officerId: string;
+    officerName: string;
+    market: string;
+    openClaims: number;
+    underReview: number;
+    infoRequested: number;
+    assessed: number;
 }
 

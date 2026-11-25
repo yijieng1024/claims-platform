@@ -10,7 +10,7 @@
 
 
 export interface VerifyResponse { 
-    match?: boolean;
-    holderName?: string;
+    match: boolean;
+    holderName?: string | null;
 }
 

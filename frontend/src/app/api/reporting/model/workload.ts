@@ -11,7 +11,7 @@ import { OfficerWorkload } from './officer-workload';
 
 
 export interface Workload { 
-    asOf?: string;
-    officers?: Array<OfficerWorkload>;
+    asOf?: string | null;
+    officers: Array<OfficerWorkload>;
 }
 

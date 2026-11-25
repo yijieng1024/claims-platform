@@ -46,11 +46,11 @@ const ICONS: Record<string, string> = {
   `,
 })
 export class StatusChip {
-  readonly status = input<string | undefined>();
-  readonly icon = computed(() => ICONS[this.status() ?? ''] ?? 'circle');
+  readonly status = input.required<string>();
+  readonly icon = computed(() => ICONS[this.status()] ?? 'circle');
   // "INFO_REQUESTED" -> "Info requested"
   readonly label = computed(() => {
-    const s = (this.status() ?? '').replace(/_/g, ' ').toLowerCase();
+    const s = this.status().replace(/_/g, ' ').toLowerCase();
     return s.charAt(0).toUpperCase() + s.slice(1);
   });
 }

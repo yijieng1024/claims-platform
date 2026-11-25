@@ -10,21 +10,21 @@
 
 
 export interface ClaimSummary { 
-    id?: string;
-    claimNumber?: string;
-    policyNumber?: string;
-    type?: string;
-    market?: string;
-    currency?: string;
-    incidentDate?: string;
-    claimedAmount?: number;
-    reserveAmount?: number;
-    settledAmount?: number;
-    status?: ClaimSummaryStatusEnum;
-    claimantName?: string;
-    assignedOfficerName?: string;
-    createdAt?: string;
-    updatedAt?: string;
+    id: string;
+    claimNumber: string;
+    policyNumber: string;
+    type: string;
+    market: string;
+    currency: string;
+    incidentDate: string;
+    claimedAmount: number;
+    reserveAmount?: number | null;
+    settledAmount?: number | null;
+    status: ClaimSummaryStatusEnum;
+    claimantName: string;
+    assignedOfficerName?: string | null;
+    createdAt: string;
+    updatedAt: string;
 }
 export enum ClaimSummaryStatusEnum {
     Submitted = 'SUBMITTED',

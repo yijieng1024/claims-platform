@@ -10,12 +10,12 @@
 
 
 export interface NotificationView { 
-    id?: string;
-    claimId?: string;
-    claimNumber?: string;
-    type?: string;
-    message?: string;
-    createdAt?: string;
-    readAt?: string;
+    id: string;
+    claimId: string;
+    claimNumber: string;
+    type: string;
+    message: string;
+    createdAt: string;
+    readAt?: string | null;
 }
 

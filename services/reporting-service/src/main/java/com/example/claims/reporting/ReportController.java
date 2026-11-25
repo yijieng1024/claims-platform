@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -43,7 +44,7 @@ class ReportController {
     record MarketCount(String market, long count) {
     }
 
-    record Outstanding(OffsetDateTime asOf, List<StatusCount> byStatus, List<MarketCount> byMarket) {
+    record Outstanding(@Nullable OffsetDateTime asOf, List<StatusCount> byStatus, List<MarketCount> byMarket) {
     }
 
     @Operation(summary = "Open claim counts by status and by market (officer: own market)")
@@ -65,7 +66,7 @@ class ReportController {
             BigDecimal unreservedClaimedAmount) {
     }
 
-    record Exposure(OffsetDateTime asOf, List<CurrencyExposure> currencies) {
+    record Exposure(@Nullable OffsetDateTime asOf, List<CurrencyExposure> currencies) {
     }
 
     @Operation(summary = "Manager: per currency, reserves of open claims, and open claims without a reserve")
@@ -87,7 +88,7 @@ class ReportController {
             long infoRequested, long assessed) {
     }
 
-    record Workload(OffsetDateTime asOf, List<OfficerWorkload> officers) {
+    record Workload(@Nullable OffsetDateTime asOf, List<OfficerWorkload> officers) {
     }
 
     @Operation(summary = "Open claims per officer, by status (officer: own market; manager: all or ?market=)")
@@ -111,10 +112,10 @@ class ReportController {
 
     /** Q20: average days from pick-up to close, i.e. the officer's handling time. */
     record OfficerPerformance(UUID officerId, String officerName, String market, long closed, long settled,
-            long rejected, BigDecimal averageDaysToClose, List<Amount> settledAmounts) {
+            long rejected, @Nullable BigDecimal averageDaysToClose, List<Amount> settledAmounts) {
     }
 
-    record Performance(OffsetDateTime asOf, List<OfficerPerformance> officers) {
+    record Performance(@Nullable OffsetDateTime asOf, List<OfficerPerformance> officers) {
     }
 
     @Operation(summary = "Closed claims per officer and average days assigned to closed (officer: own market; manager: all or ?market=)")

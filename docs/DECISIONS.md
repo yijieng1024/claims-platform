@@ -193,6 +193,9 @@ towards how claims departments actually work:
 - **No Claim Discount (NCD) impact:** a settled motor claim affects the policyholder's NCD at renewal,
   which is how repeat motor claims are penalised (decision 14). Not built: renewals and premiums are
   outside this platform.
+- **Reinstatement of property sum insured** after a claim (often for an additional premium), so a
+  property policy's remaining cover can be restored. Not built: needs premium handling, which is
+  outside this platform.
 - **Fraud red flags** (e.g. very late notification, repeated claims, near-duplicate incident dates)
   routing claims to an investigation queue. Not built: needs a rules engine and an investigator role.
 - **Registered loss adjuster assignment** for complex or high-value claims. Not built: needs an

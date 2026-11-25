@@ -290,7 +290,7 @@ class ClaimApiTest {
 
     @Test
     void amountAndStatusRules() throws Exception {
-        String id = assignedClaim(OFFICER_MY1, newPolicy()); // nothing settled on it yet: full 85,000 cover
+        String id = assignedClaim(OFFICER_MY1, newPolicy("PROPERTY")); // nothing settled on it yet: full 85,000 cover
         action(OFFICER_MY1, id, "assessment", "{\"reserveAmount\":85000.01}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value(containsString("sum insured")));
@@ -366,8 +366,25 @@ class ClaimApiTest {
     }
 
     @Test
-    void sumInsuredIsSharedByAllClaimsOnThePolicy() throws Exception {
-        String policy = newPolicy(); // MYR 85,000
+    void motorSumInsuredAppliesPerClaim() throws Exception {
+        String policy = newPolicy("MOTOR"); // MYR 85,000
+        String a = assignedClaim(OFFICER_MY1, policy);
+        String b = assignedClaim(OFFICER_MY1, policy);
+        action(OFFICER_MY1, a, "assessment", "{\"reserveAmount\":60000}").andExpect(status().isOk());
+        action(OFFICER_MY1, a, "settlement", "{\"settledAmount\":60000}").andExpect(status().isOk());
+
+        // the earlier settlement doesn't reduce the cover of the next motor claim
+        assertThat(remainingCover(b)).isEqualTo("85000.0");
+        action(OFFICER_MY1, b, "assessment", "{\"reserveAmount\":85000.01}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(containsString("MYR 85000.00")));
+        action(OFFICER_MY1, b, "assessment", "{\"reserveAmount\":85000}").andExpect(status().isOk());
+        action(OFFICER_MY1, b, "settlement", "{\"settledAmount\":85000}").andExpect(status().isOk());
+    }
+
+    @Test
+    void propertySumInsuredIsSharedByAllClaimsOnThePolicy() throws Exception {
+        String policy = newPolicy("PROPERTY"); // MYR 85,000
         String a = assignedClaim(OFFICER_MY1, policy);
         String b = assignedClaim(OFFICER_MY1, policy);
         assertThat(remainingCover(b)).isEqualTo("85000.0");
@@ -397,7 +414,7 @@ class ClaimApiTest {
     @Test
     void concurrentSettlementsCannotTogetherExceedTheSumInsured() throws Exception {
         for (int round = 0; round < 3; round++) {
-            String policy = newPolicy(); // MYR 85,000
+            String policy = newPolicy("PROPERTY"); // MYR 85,000
             String x = assignedClaim(OFFICER_MY1, policy);
             String y = assignedClaim(OFFICER_MY2, policy);
             action(OFFICER_MY1, x, "assessment", "{\"reserveAmount\":50000}").andExpect(status().isOk());
@@ -478,16 +495,16 @@ class ClaimApiTest {
         return id;
     }
 
-    /** A copy of MY_MOTOR (claimant1, MYR 85,000) with no claims, for tests that count remaining cover. */
-    private String newPolicy() {
+    /** A copy of MY_MOTOR (claimant1, MY, MYR 85,000) as MOTOR or PROPERTY, with no claims yet (Q31 tests). */
+    private String newPolicy(String productType) {
         String id = UUID.randomUUID().toString();
         jdbc.sql("""
                         INSERT INTO policies (id, policy_number, holder_name, holder_email, product_type, market, currency,
                                               insured_item, sum_insured, start_date, end_date, status)
-                        SELECT ?::uuid, 'POL-TEST-' || left(?, 8), holder_name, holder_email, product_type, market, currency,
+                        SELECT ?::uuid, 'POL-TEST-' || left(?, 8), holder_name, holder_email, ?, market, currency,
                                insured_item, sum_insured, start_date, end_date, status
                         FROM policies WHERE id = ?::uuid""")
-                .param(id).param(id).param(MY_MOTOR).update();
+                .param(id).param(id).param(productType).param(MY_MOTOR).update();
         return id;
     }
 

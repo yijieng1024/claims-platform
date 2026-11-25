@@ -256,19 +256,30 @@ class ClaimService {
         return ClaimDetail.of(claim, policy.sumInsured(), remainingCover(claim, policy), open);
     }
 
-    /** Q31: sum insured minus what the policy's other SETTLED claims paid. Other claims' reserves don't count. */
+    /**
+     * Q31: PROPERTY: sum insured minus what the policy's other SETTLED claims paid (other claims' reserves
+     * don't count). MOTOR: the full sum insured for every claim, since repeat motor claims are penalised
+     * through the No Claim Discount at renewal (out of scope), not by reducing the cover.
+     */
     private BigDecimal remainingCover(Claim claim, Policy policy) {
+        if (!"PROPERTY".equals(policy.productType())) {
+            return policy.sumInsured();
+        }
         return policy.sumInsured().subtract(claims.settledOnPolicyExcept(policy.id(), claim.getId()));
     }
 
     /**
-     * Q31: the amount must fit in the policy's remaining cover. The policy row stays locked until commit,
-     * so two officers settling two claims on one policy at once are checked one after the other and the
-     * second one sees the first's settlement.
+     * Q31: the amount must fit in the policy's remaining cover. The policy row stays locked until commit
+     * (for both product types, so the rule has one code path), so two officers settling two claims on one
+     * policy at once are checked one after the other and the second one sees the first's settlement.
      */
     private void requireWithinRemainingCover(BigDecimal amount, Claim claim, String what) {
         Policy policy = policies.findByIdForUpdate(claim.getPolicyId()).orElseThrow();
         BigDecimal remaining = remainingCover(claim, policy);
+        if (amount.compareTo(remaining) > 0 && !"PROPERTY".equals(policy.productType())) {
+            throw badRequest("%s cannot exceed the sum insured (%s %s)"
+                    .formatted(what, policy.currency(), policy.sumInsured().toPlainString()));
+        }
         if (amount.compareTo(remaining) > 0) {
             throw badRequest("%s cannot exceed the remaining cover on this policy: %s %s (sum insured %s %s)"
                     .formatted(what, policy.currency(), remaining.toPlainString(), policy.currency(),

@@ -29,8 +29,9 @@ No real insurer's name, logo or brand colours anywhere.
 | `--surface-solid` | `#ffffff` | Opaque fallback / where translucency looks wrong (e.g. inside dialogs) |
 | `--surface-2` | `#f5f5f7` | Nested fills: chips, tab rails, hover fills, table header |
 | `--brand` | `#042e61` | Primary actions, logo, active nav item, links |
+| `--brand-light` | `#0b4a8f` | Lighter end of the logo gradient |
 | `--brand-tint` | `#eaf1fa` | Selected pills, soft badges, focus ring |
-| `--positive` | `#1a7f4f` | Success, settled |
+| `--positive` | `#17754a` | Success, settled (darkened from `#1a7f4f` so 12px chip text on its 10% background reaches 4.96:1) |
 | `--negative` | `#b42318` | Errors, rejected, destructive actions |
 | `--warning` | `#b54708` | Needs attention (information requested). Text-safe on white (≥ 4.5:1) |
 | `--text` | `#1d1d1f` | Body text |
@@ -40,6 +41,8 @@ No real insurer's name, logo or brand colours anywhere.
 | `--glass-edge` | `rgba(255,255,255,0.55)` | Glass edge highlight / inner border |
 | `--shadow` | `rgba(4,46,97,0.08)` | Soft ambient shadows |
 | `--dot` | `rgb(15 23 42 / 0.14)` | Page dot grid |
+
+Avoid `--text-muted` on `--brand-tint` (4.46:1, below 4.5:1).
 
 Status colours are used at **low alpha for backgrounds** (about 10%) with the full colour for text/icon.
 
@@ -109,11 +112,20 @@ Every status chip shows **an icon and text**, never colour alone.
 - **Secondary button:** `--brand-tint` background, `--brand` text, pill.
 - **Destructive button** (e.g. Reject): `--negative` text on `--negative` @10%, pill. Always behind a confirm dialog.
 - **Inputs:** `--bg` background, `--line` border, 12px radius, ~46px tall. Focus: `box-shadow: 0 0 0 3px var(--brand-tint)` plus border in `--brand`. Never remove focus indication without this replacement.
+- **Form errors:** field validation errors appear under the field (`--negative`). Login failure ("Invalid email or password") is shown inline and marks **both** fields, because the backend deliberately doesn't say which one was wrong; editing either field clears both. Other errors (e.g. a service down) use the snackbar.
+- **Required fields:** the required asterisk is `--negative` on every form; Material's built-in required attribute still tells screen readers.
+- **Password fields:** an eye toggle (`type="button"`, never submits) switching between hidden and visible text, with `aria-label` "Show password" / "Hide password". Same on login and register.
 - **Tables:** inside a flat card; header row on `--surface-2`, 12px muted labels; rows separated by `--line` hairlines; row hover `--surface-2`; numeric columns right-aligned with `tabular-nums`.
 - **KPI cards** (dashboard): flat card, small muted label, large tabular number, optional caption line underneath.
 - **Tab rails / segmented filters:** `--surface-2` pill container with the active segment on `--surface-solid` and a soft shadow.
+- **Timeline** (claim detail): horizontal, directly under the claim number and status, oldest step on the left. Finished steps: status chip, date/time, who, note; joined by a solid `--brand` line; the current step has a filled dot with a soft ring. Upcoming steps (normal path from the state machine) in muted grey with **dashed** dots and labels — dashed is the non-colour signal. The final step is labelled "Settled or rejected". Each step ≥ 180px; scrolls sideways (keyboard-scrollable) when it doesn't fit. Used on both claimant and staff claim detail.
 - **Empty states:** centred muted text + one primary action.
 - **Snackbar:** keep Material's default dark snackbar (good contrast on any page).
+
+### Accepted deviations (Material limitations)
+- Primary button hover uses Material's hover overlay instead of 90% opacity (no supported way to swap it).
+- Form fields are 48px tall (Material density steps are 48 or 44), not ~46px.
+- Field and card `appearance` is set per template instead of app-wide, to keep Material code out of the first download.
 
 ---
 

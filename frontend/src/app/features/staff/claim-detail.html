@@ -1,0 +1,182 @@
+<div class="page">
+  <a matButton [routerLink]="backUrl()" class="back">
+    <mat-icon>arrow_back</mat-icon>{{ auth.role() === 'MANAGER' ? 'All claims' : 'My claims' }}
+  </a>
+
+  @if (data(); as data) {
+    @let claim = data.claim;
+    <!-- Header -->
+    <div class="title">
+      <div class="row">
+        <h1 class="num">{{ claim.claimNumber }}</h1>
+        <app-status-chip [status]="claim.status" />
+      </div>
+      <p class="muted">
+        <span class="num">{{ claim.policyNumber }}</span> · {{ claim.type | titlecase }} · {{ claim.market }} ·
+        submitted <span class="num">{{ claim.createdAt | date: 'mediumDate' }}</span>
+      </p>
+    </div>
+
+    <!-- Timeline: the same shared component as on the claimant's page -->
+    <mat-card appearance="outlined">
+      <div class="card-body">
+        <h3>Timeline</h3>
+        <app-timeline [history]="data.history" [status]="claim.status" />
+      </div>
+    </mat-card>
+
+    <!-- Actions: only for the assigned officer (or pick-up), only what the state machine allows -->
+    @if (actions().length) {
+      <mat-card appearance="outlined" class="actions-card">
+        <div class="card-body row">
+          <h3 class="actions-title">Actions</h3>
+          <span class="spacer"></span>
+          <!-- one primary (filled) action per view: the claim's natural next step -->
+          @for (action of actions(); track action) {
+            @switch (action) {
+              @case ('pickUp') {
+                <button matButton="filled" (click)="pickUp()" [disabled]="busy()"><mat-icon>assignment_ind</mat-icon>Pick up</button>
+              }
+              @case ('requestInfo') {
+                <button matButton="tonal" (click)="requestInfo()" [disabled]="busy()"><mat-icon>help_outline</mat-icon>Request information</button>
+              }
+              @case ('assess') {
+                <button [matButton]="claim.status === 'ASSESSED' ? 'tonal' : 'filled'" (click)="assess(claim)" [disabled]="busy()">
+                  <mat-icon>fact_check</mat-icon>{{ claim.status === 'ASSESSED' ? 'Update reserve' : 'Assess' }}
+                </button>
+              }
+              @case ('settle') {
+                <button matButton="filled" (click)="settle(claim)" [disabled]="busy()"><mat-icon>check_circle</mat-icon>Settle</button>
+              }
+              @case ('reject') {
+                <button matButton="tonal" class="btn-destructive" (click)="reject()" [disabled]="busy()"><mat-icon>cancel</mat-icon>Reject</button>
+              }
+            }
+          }
+        </div>
+        @if (busy()) {
+          <mat-progress-bar mode="indeterminate" />
+        }
+      </mat-card>
+    } @else if (assignedToMe() && claim.status === 'INFO_REQUESTED') {
+      <p class="muted waiting"><mat-icon aria-hidden="true">hourglass_empty</mat-icon>Waiting for the claimant to answer your question.</p>
+    }
+
+    <!-- Amounts and people -->
+    <mat-card appearance="outlined">
+      <div class="card-body">
+        <div class="amounts">
+          <div>
+            <div class="label">Sum insured</div>
+            <div class="amount num">{{ claim.sumInsured | money: claim.currency }}</div>
+          </div>
+          <div>
+            <div class="label">Claimed</div>
+            <div class="amount num">{{ claim.claimedAmount | money: claim.currency }}</div>
+          </div>
+          <div>
+            <div class="label">Reserve</div>
+            <div class="amount num">{{ claim.reserveAmount != null ? (claim.reserveAmount | money: claim.currency) : '—' }}</div>
+          </div>
+          <div>
+            <div class="label">Settled</div>
+            <div class="amount num" [class.positive]="claim.settledAmount != null">
+              {{ claim.settledAmount != null ? (claim.settledAmount | money: claim.currency) : '—' }}
+            </div>
+          </div>
+        </div>
+
+        @if (claim.rejectionReason) {
+          <div class="rejection">
+            <mat-icon aria-hidden="true">cancel</mat-icon>
+            <div><strong>Rejected:</strong> <span class="pre">{{ claim.rejectionReason }}</span></div>
+          </div>
+        }
+
+        <dl class="facts">
+          <dt>Claimant</dt><dd>{{ claim.claimantName }}</dd>
+          <dt>Assigned officer</dt>
+          <dd>
+            @if (claim.assignedOfficerName) {
+              {{ claim.assignedOfficerName }}
+              <span class="muted num">since {{ claim.assignedAt | date: 'medium' }}</span>
+            } @else {
+              <span class="muted">Not picked up yet</span>
+            }
+          </dd>
+        </dl>
+      </div>
+    </mat-card>
+
+    <!-- Incident -->
+    <mat-card appearance="outlined">
+      <div class="card-body">
+        <h3>Incident</h3>
+        <dl class="facts">
+          <dt>Date</dt><dd class="num">{{ claim.incidentDate | date: 'mediumDate' }}</dd>
+          <dt>Location</dt><dd>{{ claim.incidentLocation }}</dd>
+          <dt>Description</dt><dd class="pre">{{ claim.description }}</dd>
+        </dl>
+      </div>
+    </mat-card>
+
+    <!-- Information requests with the claimant's answers -->
+    <mat-card appearance="outlined">
+      <div class="card-body">
+        <h3>Information requests</h3>
+        @for (r of data.requests; track r.id) {
+          <div class="info-request">
+            <div class="muted when num">Asked {{ r.createdAt | date: 'medium' }}</div>
+            <blockquote class="pre">{{ r.question }}</blockquote>
+            @if (r.responseText) {
+              <div class="muted when num">Answered {{ r.respondedAt | date: 'medium' }}</div>
+              <p class="pre answer">{{ r.responseText }}</p>
+            } @else {
+              <p class="muted answer">No answer yet.</p>
+            }
+          </div>
+        } @empty {
+          <p class="muted empty">No information requested.</p>
+        }
+      </div>
+    </mat-card>
+
+    <!-- Documents -->
+    <mat-card appearance="outlined" class="table-card">
+      <div class="card-body section-head"><h3>Documents</h3></div>
+      @if (data.documents.length) {
+        <table mat-table [dataSource]="data.documents">
+          <ng-container matColumnDef="originalFilename">
+            <th mat-header-cell *matHeaderCellDef>File</th>
+            <td mat-cell *matCellDef="let d">{{ d.originalFilename }}</td>
+          </ng-container>
+          <ng-container matColumnDef="uploadedAt">
+            <th mat-header-cell *matHeaderCellDef>Uploaded</th>
+            <td mat-cell *matCellDef="let d" class="num">{{ d.uploadedAt | date: 'medium' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="download">
+            <th mat-header-cell *matHeaderCellDef class="num-col">Download</th>
+            <td mat-cell *matCellDef="let d" class="num-col">
+              <button matIconButton (click)="download(d)" [attr.aria-label]="'Download ' + d.originalFilename">
+                <mat-icon>download</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="documentColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: documentColumns"></tr>
+        </table>
+      } @else {
+        <p class="card-body muted no-docs">No documents.</p>
+      }
+    </mat-card>
+  } @else if (loadFailed() && !data()) {
+    <mat-card appearance="outlined">
+      <div class="empty-state">
+        <p>This claim can't be shown.</p>
+        <a matButton="filled" [routerLink]="backUrl()">Back</a>
+      </div>
+    </mat-card>
+  } @else {
+    <mat-progress-bar mode="indeterminate" />
+  }
+</div>

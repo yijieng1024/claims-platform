@@ -19,6 +19,7 @@ import {
   InformationRequestView,
 } from '../../api/claims';
 import { ErrorService } from '../../core/error.service';
+import { saveBlob } from '../../shared/download';
 import { FilePicker } from '../../shared/file-picker';
 import { MoneyPipe } from '../../shared/money.pipe';
 import { StatusChip } from '../../shared/status-chip';
@@ -118,20 +119,9 @@ export class ClaimDetailPage implements OnInit {
     this.load();
   }
 
-  /**
-   * Downloads through HttpClient so the interceptor adds the token (a plain <a href> would not send it),
-   * then hands the file to the browser under its original name.
-   */
   download(doc: DocumentView): void {
     this.documentsApi.content(this.id(), doc.id).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = doc.originalFilename;
-        a.click();
-        URL.revokeObjectURL(url);
-      },
+      next: (blob) => saveBlob(blob, doc.originalFilename),
       error: (err) => this.errors.show(err),
     });
   }

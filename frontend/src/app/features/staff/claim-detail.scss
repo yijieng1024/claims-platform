@@ -1,0 +1,40 @@
+// Staff-only additions; the shared layout classes come from ../claimant/claim-detail.scss.
+
+.amounts {
+  flex-wrap: wrap;
+  row-gap: 16px;
+}
+
+.actions-card {
+  overflow: hidden; // keeps the progress bar inside the rounded corners
+}
+
+.actions-title {
+  margin: 0;
+}
+
+.waiting {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+
+.info-request + .info-request {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.when {
+  font-size: 12.5px;
+  margin-bottom: 6px;
+}
+
+.answer {
+  margin: 0;
+}
+
+.empty {
+  margin: 0;
+}

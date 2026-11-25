@@ -16,6 +16,13 @@ npm run build      # production build into dist/
 The three backend services must be running for the app to work (see the root README). Building and
 testing do **not** need them.
 
+**In Docker** (`docker compose up --build` from the repo root), `Dockerfile` builds the same production
+bundle with Node and serves it with **nginx** on port 4200. `nginx.conf` does in production what
+`proxy.conf.json` does in development: it forwards `/api/auth`, `/api/claims`, `/api/policies`,
+`/api/reports` and `/api/notifications` to the services, so the browser still talks to one origin
+(no CORS). Any other path that isn't a file returns `index.html`, so Angular's router can handle URLs
+like `/claims/123` on a page reload.
+
 ## Folder structure
 
 ```

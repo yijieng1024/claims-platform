@@ -66,3 +66,18 @@ mat-card {
 .actions {
   margin: 8px 0;
 }
+
+// Q30 duplicate-claim message under the date: the same red box as a destructive dialog notice
+.duplicate {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-field);
+  background: var(--negative-soft);
+  color: var(--negative);
+
+  mat-icon { flex-shrink: 0; }
+  a { color: inherit; font-weight: 600; }
+}

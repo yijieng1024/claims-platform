@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -36,6 +37,8 @@ export class NewClaim {
   readonly policies = signal<Policy[] | null>(null); // null = still loading
   readonly files = signal<File[]>([]);
   readonly busy = signal(false);
+  /** Q30: a 409 because this policy already has a claim for the incident date; shown inline with a link to it. */
+  readonly duplicate = signal<{ claimId: string; message: string } | null>(null);
 
   readonly form = inject(FormBuilder).nonNullable.group({
     policyId: ['', Validators.required],
@@ -72,6 +75,8 @@ export class NewClaim {
       this.form.controls.incidentDate.reset();
       this.form.controls.claimedAmount.updateValueAndValidity();
     });
+    // the duplicate message is about the submitted date; another date (or policy) may be fine
+    this.form.controls.incidentDate.valueChanges.subscribe(() => this.duplicate.set(null));
   }
 
   submit(): void {
@@ -90,6 +95,11 @@ export class NewClaim {
         next: (claim) => this.uploadThenOpen(claim.id, claim.claimNumber),
         error: (err) => {
           this.busy.set(false);
+          const existing = err instanceof HttpErrorResponse && err.status === 409 ? err.error?.existingClaimId : null;
+          if (existing) {
+            this.duplicate.set({ claimId: existing, message: err.error.detail });
+            return;
+          }
           this.errors.show(err, this.form);
         },
       });

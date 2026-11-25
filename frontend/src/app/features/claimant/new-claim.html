@@ -62,6 +62,12 @@
                   @else if (form.controls.claimedAmount.hasError('min')) { <mat-error>Must be more than 0</mat-error> }
                 </mat-form-field>
               </div>
+              @if (duplicate(); as d) {
+                <p class="duplicate" role="alert">
+                  <mat-icon aria-hidden="true">error_outline</mat-icon>
+                  <span>{{ d.message }}. <a [routerLink]="['/claims', d.claimId]">View that claim</a></span>
+                </p>
+              }
 
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Location</mat-label>

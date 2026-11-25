@@ -18,7 +18,7 @@ docker compose up --build
 ```
 
 Open **http://localhost:4200** once the `frontend` container has started (compose waits until the
-three services report healthy). The first build downloads base images and all Maven/npm dependencies
+three services report healthy). The first build downloads base images and all Maven/npm dependencies; it
 took about **3 minutes** on my machine with the base images already downloaded (allow 5–10 minutes
 on a first run, depending on your connection); later starts take seconds.
 

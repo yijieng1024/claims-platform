@@ -22,16 +22,8 @@ import { ErrorService } from '../../core/error.service';
 import { FilePicker } from '../../shared/file-picker';
 import { MoneyPipe } from '../../shared/money.pipe';
 import { StatusChip } from '../../shared/status-chip';
+import { Timeline } from '../../shared/timeline';
 import { uploadFiles, UploadError } from './upload-files';
-
-/** Remaining steps per current status, following the state machine's normal path (design §5). */
-const UPCOMING: Record<string, string[]> = {
-  SUBMITTED: ['Under review', 'Assessed', 'Decision'],
-  UNDER_REVIEW: ['Assessed', 'Decision'],
-  INFO_REQUESTED: ['Under review', 'Assessed', 'Decision'],
-  ASSESSED: ['Decision'],
-  // SETTLED and REJECTED are final: nothing left
-};
 
 /** Everything the page shows, loaded together. */
 interface ClaimData {
@@ -45,7 +37,7 @@ interface ClaimData {
   selector: 'app-claim-detail',
   imports: [
     ReactiveFormsModule, RouterLink, DatePipe, TitleCasePipe, MatButtonModule, MatCardModule, MatFormFieldModule,
-    MatIconModule, MatInputModule, MatProgressBarModule, MatTableModule, FilePicker, MoneyPipe, StatusChip,
+    MatIconModule, MatInputModule, MatProgressBarModule, MatTableModule, FilePicker, MoneyPipe, StatusChip, Timeline,
   ],
   templateUrl: './claim-detail.html',
   styleUrl: './claim-detail.scss',
@@ -65,12 +57,6 @@ export class ClaimDetailPage implements OnInit {
   readonly claim = computed(() => this.data()?.claim);
   readonly openRequest = computed(() => this.claim()?.openInformationRequest);
   readonly closed = computed(() => ['SETTLED', 'REJECTED'].includes(this.claim()?.status ?? ''));
-
-  /**
-   * The steps still ahead of the claim on its normal path (design §5), shown greyed out after the real
-   * history so the timeline covers the whole journey. The last step is the decision: settled or rejected.
-   */
-  readonly upcomingSteps = computed(() => UPCOMING[this.claim()?.status ?? ''] ?? []);
 
   // answer to the open information request
   readonly responseText = new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(4000)] });

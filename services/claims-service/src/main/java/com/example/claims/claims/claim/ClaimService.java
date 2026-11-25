@@ -24,9 +24,11 @@ import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -79,10 +81,22 @@ class ClaimService {
             throw badRequest("Incident date is outside the policy cover period (%s to %s)"
                     .formatted(policy.startDate(), policy.endDate()));
         }
+        throwIfDuplicate(policy.id(), req.incidentDate());
         Instant now = now();
         var claim = Claim.open(nextClaimNumber(today.getYear()), claimant, policy, req.incidentDate(),
                 req.incidentLocation().trim(), req.description().trim(), req.claimedAmount(), now);
         return save(claim, null, claimant, ClaimEventType.ClaimSubmitted, null, now);
+    }
+
+    /**
+     * Q30: 409 if the policy already has a claim for this incident date that wasn't rejected. Also called
+     * after a lost race on the unique index (ClaimController), when the winner has been committed.
+     */
+    void throwIfDuplicate(UUID policyId, LocalDate incidentDate) {
+        claims.findFirstByPolicyIdAndIncidentDateAndStatusNot(policyId, incidentDate, ClaimStatus.REJECTED)
+                .ifPresent(existing -> {
+                    throw new DuplicateClaimException(existing);
+                });
     }
 
     ClaimDetail assign(UUID claimId, Caller officer) {
@@ -273,5 +287,21 @@ class ClaimService {
 
     private static ResponseStatusException badRequest(String detail) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, detail);
+    }
+
+    /** The claimant owns the policy, so naming their existing claim reveals nothing; the id lets the UI link to it. */
+    static class DuplicateClaimException extends ErrorResponseException {
+
+        DuplicateClaimException(Claim existing) {
+            super(HttpStatus.CONFLICT, problem(existing), null);
+        }
+
+        private static ProblemDetail problem(Claim existing) {
+            var problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                    "A claim for this incident already exists: " + existing.getClaimNumber());
+            problem.setProperty("existingClaimId", existing.getId());
+            problem.setProperty("existingClaimNumber", existing.getClaimNumber());
+            return problem;
+        }
     }
 }

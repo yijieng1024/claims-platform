@@ -7,6 +7,7 @@ import static com.example.claims.claims.claim.ClaimApiTest.MY_MOTOR;
 import static com.example.claims.claims.claim.ClaimApiTest.OFFICER_MY1;
 import static com.example.claims.claims.claim.ClaimApiTest.OFFICER_MY2;
 import static com.example.claims.claims.claim.ClaimApiTest.OFFICER_SG1;
+import static com.example.claims.claims.claim.ClaimApiTest.DAYS_AGO;
 import static com.example.claims.claims.claim.ClaimApiTest.TODAY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -280,7 +281,7 @@ class DocumentApiTest {
     private String openClaim() throws Exception {
         String body = mvc.perform(post("/api/claims").with(CLAIMANT1).contentType(MediaType.APPLICATION_JSON).content("""
                         {"policyId":"%s","incidentDate":"%s","incidentLocation":"KL","description":"Dent",
-                         "claimedAmount":500}""".formatted(MY_MOTOR, TODAY.minusDays(1))))
+                         "claimedAmount":500}""".formatted(MY_MOTOR, TODAY.minusDays(DAYS_AGO.getAndIncrement())))) // one claim per day (Q30)
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
         return JsonPath.read(body, "$.id");
     }

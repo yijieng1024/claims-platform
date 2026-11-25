@@ -17,6 +17,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -47,7 +48,17 @@ class ClaimController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     ClaimDetail open(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody OpenClaimRequest body) {
-        return service.open(Caller.of(jwt), body);
+        try {
+            return service.open(Caller.of(jwt), body);
+        } catch (DataIntegrityViolationException e) {
+            // Q30: lost a race on the unique index. That transaction is rolled back and the winner is
+            // committed (Postgres waits for it before reporting the violation), so look it up for the 409.
+            String cause = String.valueOf(e.getMostSpecificCause().getMessage());
+            if (cause.contains("claims_policy_incident_uidx")) {
+                service.throwIfDuplicate(body.policyId(), body.incidentDate());
+            }
+            throw e;
+        }
     }
 
     @Operation(summary = "Claimant: my claims, newest first")

@@ -1,6 +1,7 @@
 package com.example.claims.claims.claim;
 
 import jakarta.persistence.LockModeType;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +26,10 @@ interface ClaimRepository extends JpaRepository<Claim, UUID> {
             where (:status is null or c.status = :status) and (:market is null or c.market = :market)
             """)
     Page<Claim> search(ClaimStatus status, String market, Pageable pageable);
+
+    /** Q30: the claim that blocks another one for the same incident (a REJECTED one doesn't). */
+    Optional<Claim> findFirstByPolicyIdAndIncidentDateAndStatusNot(UUID policyId, LocalDate incidentDate,
+            ClaimStatus status);
 
     /** SELECT ... FOR UPDATE: serialises document uploads per claim (the 20-document limit). Doesn't bump version. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

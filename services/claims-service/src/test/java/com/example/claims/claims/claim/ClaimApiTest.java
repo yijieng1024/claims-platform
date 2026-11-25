@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -66,6 +67,8 @@ class ClaimApiTest {
     static final JwtRequestPostProcessor MANAGER = user("00000000-0000-0000-0000-000000000001", "Demo Manager", "MANAGER", "manager@example.com", null);
 
     static final LocalDate TODAY = LocalDate.now(ZoneOffset.UTC);
+    /** Q30 allows one claim per policy and incident date, so each claim a test opens gets its own day. */
+    static final AtomicInteger DAYS_AGO = new AtomicInteger(1);
 
     @Autowired
     MockMvc mvc;
@@ -74,7 +77,7 @@ class ClaimApiTest {
 
     @Test
     void happyPathOpenAssignRequestRespondAssessSettle() throws Exception {
-        String id = openClaim(CLAIMANT1, MY_MOTOR, TODAY.minusDays(3), "1200.00");
+        String id = openClaim(CLAIMANT1, MY_MOTOR, nextIncidentDate(), "1200.00");
         expectOutbox(id, 1, "ClaimSubmitted", 0);
         mvc.perform(get("/api/claims/" + id).with(CLAIMANT1))
                 .andExpect(status().isOk())
@@ -200,12 +203,12 @@ class ClaimApiTest {
                 .andExpect(jsonPath("$.errors.claimedAmount").exists());
         // expired policy is fine if the incident was inside the cover period
         open(CLAIMANT1, TH_EXPIRED, TODAY.minusMonths(24), "100").andExpect(status().isCreated());
-        open(CLAIMANT2, ID_MOTOR, TODAY, "100").andExpect(status().isCreated());
+        open(CLAIMANT2, ID_MOTOR, nextIncidentDate(), "100").andExpect(status().isCreated());
     }
 
     @Test
     void outboxFailureRollsBackTheClaimChange() throws Exception {
-        String id = openClaim(CLAIMANT1, MY_MOTOR, TODAY.minusDays(1), "300");
+        String id = openClaim(CLAIMANT1, MY_MOTOR, nextIncidentDate(), "300");
         // make the next ClaimAssigned outbox insert fail inside the database; NOT VALID skips existing rows
         jdbc.sql("ALTER TABLE outbox_events ADD CONSTRAINT test_no_assigned CHECK (event_type <> 'ClaimAssigned') NOT VALID").update();
         try {
@@ -226,7 +229,7 @@ class ClaimApiTest {
     @Test
     void concurrentAssignOneWinsOtherGets409() throws Exception {
         for (int round = 0; round < 3; round++) {
-            String id = openClaim(CLAIMANT1, MY_MOTOR, TODAY.minusDays(1), "400");
+            String id = openClaim(CLAIMANT1, MY_MOTOR, nextIncidentDate(), "400");
             var barrier = new CyclicBarrier(2);
             List<Future<Integer>> results = new ArrayList<>();
             try (var pool = Executors.newFixedThreadPool(2)) {
@@ -249,7 +252,7 @@ class ClaimApiTest {
 
     @Test
     void whoMaySeeAndActOnAClaim() throws Exception {
-        String id = openClaim(CLAIMANT1, MY_MOTOR, TODAY.minusDays(1), "500");
+        String id = openClaim(CLAIMANT1, MY_MOTOR, nextIncidentDate(), "500");
 
         // another market's officer and another claimant: 404, the claim "doesn't exist" for them
         mvc.perform(get("/api/claims/" + id).with(OFFICER_SG1)).andExpect(status().isNotFound());
@@ -304,9 +307,66 @@ class ClaimApiTest {
     }
 
     @Test
+    void oneClaimPerPolicyAndIncidentDateUnlessRejected() throws Exception {
+        // first claim still open
+        LocalDate day = nextIncidentDate();
+        String first = openClaim(CLAIMANT1, MY_MOTOR, day, "100");
+        String firstNumber = JsonPath.read(mvc.perform(get("/api/claims/" + first).with(CLAIMANT1))
+                .andReturn().getResponse().getContentAsString(), "$.claimNumber");
+        open(CLAIMANT1, MY_MOTOR, day, "200")
+                .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("A claim for this incident already exists: " + firstNumber))
+                .andExpect(jsonPath("$.existingClaimId").value(first))
+                .andExpect(jsonPath("$.existingClaimNumber").value(firstNumber));
+
+        // first claim settled: still a duplicate
+        action(OFFICER_MY1, first, "assign", null).andExpect(status().isOk());
+        action(OFFICER_MY1, first, "assessment", "{\"reserveAmount\":100}").andExpect(status().isOk());
+        action(OFFICER_MY1, first, "settlement", "{\"settledAmount\":100}").andExpect(status().isOk());
+        open(CLAIMANT1, MY_MOTOR, day, "200").andExpect(status().isConflict());
+
+        // first claim rejected: may be re-submitted, and then that one blocks the next
+        LocalDate other = nextIncidentDate();
+        String rejected = openClaim(CLAIMANT1, MY_MOTOR, other, "100");
+        action(OFFICER_MY1, rejected, "assign", null).andExpect(status().isOk());
+        action(OFFICER_MY1, rejected, "rejection", "{\"reason\":\"Not covered\"}").andExpect(status().isOk());
+        String resubmitted = openClaim(CLAIMANT1, MY_MOTOR, other, "100");
+        open(CLAIMANT1, MY_MOTOR, other, "100").andExpect(jsonPath("$.existingClaimId").value(resubmitted));
+
+        // same policy another day, another policy the same day: fine
+        open(CLAIMANT1, MY_MOTOR, nextIncidentDate(), "100").andExpect(status().isCreated());
+        open(CLAIMANT2, ID_MOTOR, day, "100").andExpect(status().isCreated());
+    }
+
+    @Test
+    void simultaneousDuplicateSubmissionsOneWinsOtherGets409() throws Exception {
+        for (int round = 0; round < 5; round++) {
+            LocalDate day = nextIncidentDate();
+            var barrier = new CyclicBarrier(2);
+            List<Future<Integer>> results = new ArrayList<>();
+            try (var pool = Executors.newFixedThreadPool(2)) {
+                for (int i = 0; i < 2; i++) {
+                    results.add(pool.submit(() -> {
+                        barrier.await();
+                        return open(CLAIMANT1, MY_MOTOR, day, "100").andReturn().getResponse().getStatus();
+                    }));
+                }
+            }
+            List<Integer> statuses = new ArrayList<>();
+            for (var r : results) {
+                statuses.add(r.get());
+            }
+            assertThat(statuses).containsExactlyInAnyOrder(201, 409);
+            assertThat(jdbc.sql("SELECT count(*) FROM claims WHERE policy_id = ?::uuid AND incident_date = ?")
+                    .param(MY_MOTOR).param(day).query(Integer.class).single()).isEqualTo(1);
+        }
+    }
+
+    @Test
     void managerListsAllMarketsWithFiltersAndPages() throws Exception {
-        String my = openClaim(CLAIMANT1, MY_MOTOR, TODAY.minusDays(1), "10");
-        String id = openClaim(CLAIMANT2, ID_MOTOR, TODAY.minusDays(1), "10");
+        String my = openClaim(CLAIMANT1, MY_MOTOR, nextIncidentDate(), "10");
+        String id = openClaim(CLAIMANT2, ID_MOTOR, nextIncidentDate(), "10");
 
         mvc.perform(get("/api/claims").with(MANAGER).param("size", "100"))
                 .andExpect(status().isOk())
@@ -348,9 +408,14 @@ class ClaimApiTest {
     }
 
     private String assignedClaim(JwtRequestPostProcessor officer) throws Exception {
-        String id = openClaim(CLAIMANT1, MY_MOTOR, TODAY.minusDays(2), "900");
+        String id = openClaim(CLAIMANT1, MY_MOTOR, nextIncidentDate(), "900");
         action(officer, id, "assign", null).andExpect(status().isOk());
         return id;
+    }
+
+    /** A different day on each call, inside the seeded policies' cover (MY_MOTOR started 6 months ago). */
+    private static LocalDate nextIncidentDate() {
+        return TODAY.minusDays(DAYS_AGO.getAndIncrement());
     }
 
     private String openClaim(JwtRequestPostProcessor claimant, String policyId, LocalDate incident, String amount)

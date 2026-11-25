@@ -133,8 +133,7 @@ class ClaimService {
     /** From UNDER_REVIEW, or again from ASSESSED to change the reserve (history row, no status change). */
     ClaimDetail assess(UUID claimId, Caller officer, BigDecimal reserve, String note) {
         Claim claim = forAssignedOfficer(claimId, officer, Action.ASSESS);
-        Policy policy = policyOf(claim);
-        requireWithinSumInsured(reserve, policy, "Reserve");
+        requireWithinRemainingCover(reserve, claim, "Reserve");
         ClaimStatus from = claim.getStatus();
         Instant now = now();
         claim.assess(reserve, now);
@@ -145,7 +144,7 @@ class ClaimService {
 
     ClaimDetail settle(UUID claimId, Caller officer, BigDecimal amount, String note) {
         Claim claim = forAssignedOfficer(claimId, officer, Action.SETTLE);
-        requireWithinSumInsured(amount, policyOf(claim), "Settled amount");
+        requireWithinRemainingCover(amount, claim, "Settled amount");
         ClaimStatus from = claim.getStatus();
         Instant now = now();
         claim.settle(amount, now);
@@ -253,17 +252,27 @@ class ClaimService {
     private ClaimDetail detail(Claim claim) {
         InformationRequestView open = infoRequests.findByClaimIdAndStatus(claim.getId(), InformationRequest.Status.OPEN)
                 .map(InformationRequestView::of).orElse(null);
-        return ClaimDetail.of(claim, policyOf(claim).sumInsured(), open);
+        Policy policy = policies.findById(claim.getPolicyId()).orElseThrow(); // FK guarantees it exists
+        return ClaimDetail.of(claim, policy.sumInsured(), remainingCover(claim, policy), open);
     }
 
-    private Policy policyOf(Claim claim) {
-        return policies.findById(claim.getPolicyId()).orElseThrow(); // FK guarantees it exists
+    /** Q31: sum insured minus what the policy's other SETTLED claims paid. Other claims' reserves don't count. */
+    private BigDecimal remainingCover(Claim claim, Policy policy) {
+        return policy.sumInsured().subtract(claims.settledOnPolicyExcept(policy.id(), claim.getId()));
     }
 
-    private static void requireWithinSumInsured(BigDecimal amount, Policy policy, String what) {
-        if (amount.compareTo(policy.sumInsured()) > 0) { // Q16
-            throw badRequest("%s cannot exceed the sum insured (%s %s)"
-                    .formatted(what, policy.currency(), policy.sumInsured().toPlainString()));
+    /**
+     * Q31: the amount must fit in the policy's remaining cover. The policy row stays locked until commit,
+     * so two officers settling two claims on one policy at once are checked one after the other and the
+     * second one sees the first's settlement.
+     */
+    private void requireWithinRemainingCover(BigDecimal amount, Claim claim, String what) {
+        Policy policy = policies.findByIdForUpdate(claim.getPolicyId()).orElseThrow();
+        BigDecimal remaining = remainingCover(claim, policy);
+        if (amount.compareTo(remaining) > 0) {
+            throw badRequest("%s cannot exceed the remaining cover on this policy: %s %s (sum insured %s %s)"
+                    .formatted(what, policy.currency(), remaining.toPlainString(), policy.currency(),
+                            policy.sumInsured().toPlainString()));
         }
     }
 

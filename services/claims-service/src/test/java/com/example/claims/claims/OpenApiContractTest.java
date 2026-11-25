@@ -35,7 +35,7 @@ class OpenApiContractTest {
         String detail = "$.components.schemas.ClaimDetail";
         mvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath(detail + ".required", hasItems("id", "claimNumber", "status", "sumInsured")))
+                .andExpect(jsonPath(detail + ".required", hasItems("id", "claimNumber", "status", "sumInsured", "remainingCover")))
                 .andExpect(jsonPath(detail + ".required", not(hasItem("reserveAmount"))))
                 .andExpect(jsonPath(detail + ".required", not(hasItem("assignedOfficerId"))))
                 .andExpect(jsonPath(detail + ".properties.reserveAmount.type", hasItems("number", "null")))

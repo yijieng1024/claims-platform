@@ -43,6 +43,11 @@ public class PolicyRepository {
         return jdbc.sql(SELECT + "WHERE id = :id").param("id", id).query(Policy.class).optional();
     }
 
+    /** SELECT ... FOR UPDATE: assess and settle on one policy check its remaining cover one at a time (Q31). */
+    public Optional<Policy> findByIdForUpdate(UUID id) {
+        return jdbc.sql(SELECT + "WHERE id = :id FOR UPDATE").param("id", id).query(Policy.class).optional();
+    }
+
     /** The policy only if its holder email is {@code email}: a claimant may only claim on their own policies. */
     public Optional<Policy> findByIdAndHolderEmail(UUID id, String email) {
         return jdbc.sql(SELECT + "WHERE id = :id AND holder_email = lower(trim(:email))")

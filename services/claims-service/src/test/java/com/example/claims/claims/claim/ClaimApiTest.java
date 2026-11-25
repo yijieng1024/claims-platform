@@ -15,11 +15,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -288,7 +290,7 @@ class ClaimApiTest {
 
     @Test
     void amountAndStatusRules() throws Exception {
-        String id = assignedClaim(OFFICER_MY1);
+        String id = assignedClaim(OFFICER_MY1, newPolicy()); // nothing settled on it yet: full 85,000 cover
         action(OFFICER_MY1, id, "assessment", "{\"reserveAmount\":85000.01}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value(containsString("sum insured")));
@@ -364,6 +366,65 @@ class ClaimApiTest {
     }
 
     @Test
+    void sumInsuredIsSharedByAllClaimsOnThePolicy() throws Exception {
+        String policy = newPolicy(); // MYR 85,000
+        String a = assignedClaim(OFFICER_MY1, policy);
+        String b = assignedClaim(OFFICER_MY1, policy);
+        assertThat(remainingCover(b)).isEqualTo("85000.0");
+        action(OFFICER_MY1, a, "assessment", "{\"reserveAmount\":60000}").andExpect(status().isOk());
+        assertThat(remainingCover(b)).isEqualTo("85000.0"); // another claim's reserve isn't subtracted
+        action(OFFICER_MY1, a, "settlement", "{\"settledAmount\":60000}").andExpect(status().isOk());
+        assertThat(remainingCover(b)).isEqualTo("25000.0");
+        assertThat(remainingCover(a)).isEqualTo("85000.0"); // a claim's own settlement doesn't count against it
+
+        action(OFFICER_MY1, b, "assessment", "{\"reserveAmount\":30000}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(
+                        "Reserve cannot exceed the remaining cover on this policy: MYR 25000.00 (sum insured MYR 85000.00)"));
+        action(OFFICER_MY1, b, "assessment", "{\"reserveAmount\":25000}").andExpect(status().isOk());
+        action(OFFICER_MY1, b, "settlement", "{\"settledAmount\":25000.01}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(containsString("Settled amount cannot exceed the remaining cover")));
+        action(OFFICER_MY1, b, "settlement", "{\"settledAmount\":25000}").andExpect(status().isOk());
+
+        String c = assignedClaim(OFFICER_MY1, policy);
+        assertThat(remainingCover(c)).isEqualTo("0.0");
+        action(OFFICER_MY1, c, "assessment", "{\"reserveAmount\":1}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(containsString("MYR 0.00")));
+    }
+
+    @Test
+    void concurrentSettlementsCannotTogetherExceedTheSumInsured() throws Exception {
+        for (int round = 0; round < 3; round++) {
+            String policy = newPolicy(); // MYR 85,000
+            String x = assignedClaim(OFFICER_MY1, policy);
+            String y = assignedClaim(OFFICER_MY2, policy);
+            action(OFFICER_MY1, x, "assessment", "{\"reserveAmount\":50000}").andExpect(status().isOk());
+            action(OFFICER_MY2, y, "assessment", "{\"reserveAmount\":50000}").andExpect(status().isOk());
+
+            var barrier = new CyclicBarrier(2);
+            List<Future<Integer>> results = new ArrayList<>();
+            try (var pool = Executors.newFixedThreadPool(2)) {
+                for (var pair : List.of(Map.entry(OFFICER_MY1, x), Map.entry(OFFICER_MY2, y))) {
+                    results.add(pool.submit(() -> {
+                        barrier.await();
+                        return action(pair.getKey(), pair.getValue(), "settlement", "{\"settledAmount\":50000}")
+                                .andReturn().getResponse().getStatus();
+                    }));
+                }
+            }
+            List<Integer> statuses = new ArrayList<>();
+            for (var r : results) {
+                statuses.add(r.get());
+            }
+            assertThat(statuses).containsExactlyInAnyOrder(200, 400);
+            assertThat(jdbc.sql("SELECT sum(settled_amount) FROM claims WHERE policy_id = ?::uuid")
+                    .param(policy).query(BigDecimal.class).single()).isEqualByComparingTo("50000");
+        }
+    }
+
+    @Test
     void managerListsAllMarketsWithFiltersAndPages() throws Exception {
         String my = openClaim(CLAIMANT1, MY_MOTOR, nextIncidentDate(), "10");
         String id = openClaim(CLAIMANT2, ID_MOTOR, nextIncidentDate(), "10");
@@ -408,9 +469,31 @@ class ClaimApiTest {
     }
 
     private String assignedClaim(JwtRequestPostProcessor officer) throws Exception {
-        String id = openClaim(CLAIMANT1, MY_MOTOR, nextIncidentDate(), "900");
+        return assignedClaim(officer, MY_MOTOR);
+    }
+
+    private String assignedClaim(JwtRequestPostProcessor officer, String policyId) throws Exception {
+        String id = openClaim(CLAIMANT1, policyId, nextIncidentDate(), "900");
         action(officer, id, "assign", null).andExpect(status().isOk());
         return id;
+    }
+
+    /** A copy of MY_MOTOR (claimant1, MYR 85,000) with no claims, for tests that count remaining cover. */
+    private String newPolicy() {
+        String id = UUID.randomUUID().toString();
+        jdbc.sql("""
+                        INSERT INTO policies (id, policy_number, holder_name, holder_email, product_type, market, currency,
+                                              insured_item, sum_insured, start_date, end_date, status)
+                        SELECT ?::uuid, 'POL-TEST-' || left(?, 8), holder_name, holder_email, product_type, market, currency,
+                               insured_item, sum_insured, start_date, end_date, status
+                        FROM policies WHERE id = ?::uuid""")
+                .param(id).param(id).param(MY_MOTOR).update();
+        return id;
+    }
+
+    private String remainingCover(String claimId) throws Exception {
+        return JsonPath.read(mvc.perform(get("/api/claims/" + claimId).with(OFFICER_MY1)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(), "$.remainingCover").toString();
     }
 
     /** A different day on each call, inside the seeded policies' cover (MY_MOTOR started 6 months ago). */

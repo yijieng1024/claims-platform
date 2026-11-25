@@ -1,6 +1,7 @@
 package com.example.claims.claims.claim;
 
 import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -30,6 +31,12 @@ interface ClaimRepository extends JpaRepository<Claim, UUID> {
     /** Q30: the claim that blocks another one for the same incident (a REJECTED one doesn't). */
     Optional<Claim> findFirstByPolicyIdAndIncidentDateAndStatusNot(UUID policyId, LocalDate incidentDate,
             ClaimStatus status);
+
+    /** Q31: what the policy's other SETTLED claims have paid out. */
+    @Query(value = """
+            SELECT coalesce(sum(settled_amount), 0) FROM claims
+            WHERE policy_id = :policyId AND status = 'SETTLED' AND id <> :claimId""", nativeQuery = true)
+    BigDecimal settledOnPolicyExcept(UUID policyId, UUID claimId);
 
     /** SELECT ... FOR UPDATE: serialises document uploads per claim (the 20-document limit). Doesn't bump version. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

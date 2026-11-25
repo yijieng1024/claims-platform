@@ -66,16 +66,19 @@ final class ClaimDtos {
     }
 
     record ClaimDetail(UUID id, String claimNumber, long version, ClaimStatus status, UUID policyId,
-            String policyNumber, BigDecimal sumInsured, String type, String market, String currency,
+            String policyNumber, BigDecimal sumInsured, BigDecimal remainingCover, String type, String market,
+            String currency,
             LocalDate incidentDate, String incidentLocation, String description, BigDecimal claimedAmount,
             @Nullable BigDecimal reserveAmount, @Nullable BigDecimal settledAmount, @Nullable String rejectionReason,
             UUID claimantId, String claimantName, @Nullable UUID assignedOfficerId, @Nullable String assignedOfficerName,
             @Nullable Instant assignedAt, Instant createdAt, Instant updatedAt, @Nullable Instant closedAt,
             @Nullable InformationRequestView openInformationRequest) {
 
-        static ClaimDetail of(Claim c, BigDecimal sumInsured, InformationRequestView openRequest) {
+        /** {@code remainingCover}: sum insured minus the policy's other settled claims (Q31). */
+        static ClaimDetail of(Claim c, BigDecimal sumInsured, BigDecimal remainingCover,
+                InformationRequestView openRequest) {
             return new ClaimDetail(c.getId(), c.getClaimNumber(), c.getVersion(), c.getStatus(), c.getPolicyId(),
-                    c.getPolicyNumber(), sumInsured, c.getType(), c.getMarket(), c.getCurrency(), c.getIncidentDate(),
+                    c.getPolicyNumber(), sumInsured, remainingCover, c.getType(), c.getMarket(), c.getCurrency(), c.getIncidentDate(),
                     c.getIncidentLocation(), c.getDescription(), c.getClaimedAmount(), c.getReserveAmount(),
                     c.getSettledAmount(), c.getRejectionReason(), c.getClaimantId(), c.getClaimantName(),
                     c.getAssignedOfficerId(), c.getAssignedOfficerName(), c.getAssignedAt(), c.getCreatedAt(),

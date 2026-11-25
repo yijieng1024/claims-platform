@@ -126,14 +126,14 @@ class ClaimController {
         return service.respond(id, requestId, Caller.of(jwt), body.responseText());
     }
 
-    @Operation(summary = "Assigned officer: set or update the reserve (max: sum insured)")
+    @Operation(summary = "Assigned officer: set or update the reserve (max: remaining cover on the policy)")
     @PostMapping("/{id}/assessment")
     ClaimDetail assess(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
             @Valid @RequestBody AssessmentRequest body) {
         return service.assess(id, Caller.of(jwt), body.reserveAmount(), body.note());
     }
 
-    @Operation(summary = "Assigned officer: settle an ASSESSED claim (max: sum insured)")
+    @Operation(summary = "Assigned officer: settle an ASSESSED claim (max: remaining cover on the policy)")
     @PostMapping("/{id}/settlement")
     ClaimDetail settle(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
             @Valid @RequestBody SettlementRequest body) {

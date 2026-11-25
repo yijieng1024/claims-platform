@@ -16,3 +16,11 @@ export function today(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
+
+/** How long ago `iso` was, coarse: "45 min", "5 h", "3 d". Used for the queue's waiting time. */
+export function waitingTime(iso: string, now = Date.now()): string {
+  const minutes = Math.max(0, Math.floor((now - Date.parse(iso)) / 60_000));
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  return hours < 24 ? `${hours} h` : `${Math.floor(hours / 24)} d`;
+}

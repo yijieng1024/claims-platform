@@ -221,6 +221,44 @@ Asked whether a claimant could claim the same incident twice. Yes — nothing pr
 Brought research on BNM's Policy Document on Claims Settlement Practices (general insurance — matches our motor/property scope). Asked Claude to verify it: the policy document and the motor betterment scale were confirmed from public sources; several specific numbers couldn't be verified, so they're not stated as facts in the repo.
 Claude suggested an authority matrix (settlement above a limit needs approval). **OVERRODE:** with one manager covering all six markets, a real authority matrix means per-market approvers and a new approval status — a redesign, not a feature. Kept it, along with SLA tracking, straight-through processing, betterment calculation and fraud red flags, as documented next steps.
 
+**13:01 — CHALLENGED my own decision after research.** Asked whether in reality you can claim many times a year with the amount getting smaller. Researched with Claude: for property, cover is typically reduced by each claim paid unless reinstated ("reinstatement of sum insured" clause), which matches the per-policy total from 12:28. For motor, repeated claims are normal and are mainly penalised through the No Claim Discount at renewal, not by reducing the sum insured. Changed brief 08 while it was running: remaining cover applies to property only; motor stays capped per claim at sum insured. NCD kept as a next step.
+
+---
+
+## 2026-11-25 — Brief 08: duplicate claims + cover rules (Claude Code)
+
+**16:42 — Review of Claude Code's report.**
+- It did: duplicate-claim rule (service check + partial unique index), per-policy remaining cover for property, per-claim cap for motor, UI for both, regulatory next steps in DECISIONS.md. 7 commits. **Backend 94/94, frontend 23/23.**
+- The concurrent-settle test really depends on the policy lock: Claude Code removed the lock and the test failed.
+- I told Claude Code not to remove any of my Docker containers or volumes. For the clean-start test it proposed a separate compose project (`-p claims-cleanstart`) with its own empty volumes, and removed only that project afterwards. ACCEPTED.
+- It got blocked by a leftover Java process holding port 8082 and stopped to ask instead of working around the permission check. I confirmed the PID with `netstat` before killing it.
+- Clean start from a fresh clone passed: demo script, duplicate claim blocked with a link to the existing claim, and a property reserve above the remaining cover refused.
+- I checked: relied on Claude Code's clean-start browser test for the two new rules; didn't re-test them manually.
+
+---
+
+## Retrospective
+
+**What went well**
+- Writing the design doc first and keeping every decision in it (section 14) made each brief short and checkable.
+- Treating "skipped" tests as "not done" in brief 01 exposed a real bug in brief 02.
+- Stopping Kafka during a live demo proved the outbox pattern does what it claims.
+
+**What I'd do differently**
+- Research the domain before designing the data model. Policy as an entity, policyholder-only registration, duplicate claims and the motor vs property cover rules were all found after the core was built.
+- Keep `docs/DESIGN.md` in the repo in sync before sending a brief — several times Claude Code was working from an older version.
+- Smaller briefs earlier: the briefs that got split (02, 06) went more smoothly.
+
+**Where AI helped most**
+- Implementation speed, and Claude Code finding and fixing its own bugs during browser testing.
+- Verifying a concern against Spring Boot's source code instead of guessing (the issuer / JWKS question).
+
+**Where AI needed correcting**
+- Outdated assumptions about my own stack (suggested .NET).
+- Reporting "passed" while tests were skipped; changing backend code without re-running tests.
+- Research with numbers that couldn't be verified — kept out of the repo.
+- Suggestions that would have reshaped the design late (authority matrix), and a cleanup step (wiping Docker volumes) that wasn't needed.
+
 ---
 
 ## Template for each brief

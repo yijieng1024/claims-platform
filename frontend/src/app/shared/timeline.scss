@@ -39,6 +39,13 @@
     &:last-child::before {
       display: none;
     }
+
+    // The last step only takes the width it needs, so the steps before it stretch and the track runs
+    // across the whole card instead of stopping one column short of the right edge.
+    &:last-child {
+      flex: 0 0 auto;
+      padding-right: 0;
+    }
   }
 
   .dot {

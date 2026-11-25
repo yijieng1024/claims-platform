@@ -1,0 +1,85 @@
+.title {
+  margin-bottom: 24px;
+
+  h1 {
+    margin-bottom: 4px;
+  }
+}
+
+h2 {
+  font-size: 18px;
+  margin: 24px 0 12px;
+}
+
+// Six KPI cards: three per row on wide screens, then two, then one
+.kpis {
+  display: grid;
+  // at most three per row (3 + 3), never narrower than 240px
+  grid-template-columns: repeat(auto-fill, minmax(max(240px, calc((100% - 32px) / 3)), 1fr));
+  gap: 16px;
+}
+
+// KPI card (FRONTEND-DESIGN.md §7): small muted label, large tabular number, caption lines underneath
+.kpi {
+  padding: 20px 24px;
+}
+
+.kpi-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kpi-value {
+  margin: 6px 0 8px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.kpi-caption {
+  font-size: 12.5px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.section-head {
+  padding-bottom: 12px;
+
+  h3 {
+    margin: 0;
+  }
+}
+
+.section-title {
+  margin-top: 24px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.section-title + mat-card {
+  margin-top: 12px;
+}
+
+.empty {
+  margin: 0;
+}
+
+// card grid entrance staggered by ~60ms (§4), only without reduced motion
+@media (prefers-reduced-motion: no-preference) {
+  .kpi {
+    animation: fade-in-up 0.5s ease-out both;
+  }
+
+  @for $i from 2 through 6 {
+    .kpi:nth-child(#{$i}) {
+      animation-delay: #{($i - 1) * 60}ms;
+    }
+  }
+}

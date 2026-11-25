@@ -26,10 +26,25 @@ export const routes: Routes = [
     ],
   },
   {
-    // temporary landing page for officers and managers until their screens exist (brief 6c)
-    path: 'staff',
-    canActivate: [roleGuard('OFFICER', 'MANAGER')],
-    loadComponent: () => import('./features/staff-home').then((m) => m.StaffHome),
+    path: 'officer',
+    canActivate: [roleGuard('OFFICER')],
+    children: [
+      { path: '', loadComponent: () => import('./features/officer/queue').then((m) => m.Queue) },
+      { path: 'claims', loadComponent: () => import('./features/officer/assigned-claims').then((m) => m.AssignedClaims) },
+      // the staff claim detail is shared with managers; for them it is read-only
+      { path: 'claims/:id', loadComponent: () => import('./features/staff/claim-detail').then((m) => m.StaffClaimDetail) },
+      { path: 'team', loadComponent: () => import('./features/officer/team').then((m) => m.Team) },
+    ],
+  },
+  {
+    path: 'manager',
+    canActivate: [roleGuard('MANAGER')],
+    children: [
+      { path: '', loadComponent: () => import('./features/manager/dashboard').then((m) => m.Dashboard) },
+      { path: 'claims', loadComponent: () => import('./features/manager/all-claims').then((m) => m.AllClaims) },
+      { path: 'claims/:id', loadComponent: () => import('./features/staff/claim-detail').then((m) => m.StaffClaimDetail) },
+      { path: 'performance', loadComponent: () => import('./features/manager/team-performance').then((m) => m.TeamPerformance) },
+    ],
   },
   { path: '**', redirectTo: '' },
 ];

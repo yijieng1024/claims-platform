@@ -58,17 +58,23 @@ export class AuthService {
     this.router.navigate(['/login'], { queryParams: message ? { message } : {} });
   }
 
-  /** Where each role starts after login. Officer/manager pages arrive in brief 6b. */
+  /** Where each role starts after login: claimant → My claims, officer → Queue, manager → Dashboard. */
   homeUrl(role: Role | null = this.role()): string {
     switch (role) {
       case 'CLAIMANT':
         return '/claims';
       case 'OFFICER':
+        return '/officer';
       case 'MANAGER':
-        return '/staff';
+        return '/manager';
       default:
         return '/login';
     }
+  }
+
+  /** The claim detail page for the current role (claimant view or the staff view under /officer or /manager). */
+  claimUrl(claimId: string): string {
+    return this.role() === 'CLAIMANT' ? `/claims/${claimId}` : `${this.homeUrl()}/claims/${claimId}`;
   }
 
   private clear(): void {

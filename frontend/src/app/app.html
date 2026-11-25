@@ -5,12 +5,22 @@
     <span class="brand-name">Claims Platform</span>
   </a>
 
-  <!-- navigation links depend on the role; officer/manager links arrive with their screens (brief 6c) -->
+  <!-- navigation links depend on the role. exact: true so "Queue" (/officer) isn't also active on /officer/claims -->
   <nav class="links">
     @switch (auth.role()) {
       @case ('CLAIMANT') {
         <a routerLink="/claims" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">My claims</a>
         <a routerLink="/claims/new" routerLinkActive="active">Report an incident</a>
+      }
+      @case ('OFFICER') {
+        <a routerLink="/officer" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Queue</a>
+        <a routerLink="/officer/claims" routerLinkActive="active">My claims</a>
+        <a routerLink="/officer/team" routerLinkActive="active">Team</a>
+      }
+      @case ('MANAGER') {
+        <a routerLink="/manager" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+        <a routerLink="/manager/claims" routerLinkActive="active">All claims</a>
+        <a routerLink="/manager/performance" routerLinkActive="active">Team performance</a>
       }
     }
   </nav>

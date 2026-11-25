@@ -9,7 +9,7 @@ describe('roleGuard', () => {
       providers: [
         provideRouter([]),
         // fake AuthService with a fixed role; homeUrl mirrors the real mapping
-        { provide: AuthService, useValue: { role: () => currentRole, homeUrl: (r: Role) => (r === 'CLAIMANT' ? '/claims' : '/staff') } },
+        { provide: AuthService, useValue: { role: () => currentRole, homeUrl: (r: Role) => (r === 'CLAIMANT' ? '/claims' : r === 'OFFICER' ? '/officer' : '/manager') } },
       ],
     });
     // guards use inject(), so they must run inside an injection context

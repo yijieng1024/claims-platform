@@ -1,15 +1,5 @@
 // Horizontal timeline: one column per status change, joined by a line through the dots.
-.timeline-scroll {
-  overflow-x: auto;
-  padding-bottom: 4px; // room for the scrollbar so it doesn't touch the notes
-
-  &:focus-visible {
-    outline: 2px solid var(--brand);
-    outline-offset: 2px;
-    border-radius: var(--radius-field);
-  }
-}
-
+// Every step always fits in the card (no sideways scrolling): columns share the width and text wraps.
 .timeline {
   display: flex;
   list-style: none;
@@ -18,7 +8,9 @@
 
   li {
     position: relative;
-    flex: 1 0 180px; // share the width, but never narrower than 180px (then it scrolls)
+    flex: 1 1 0; // share the width equally and shrink as needed, so there is never a scrollbar
+    min-width: 0; // lets a column get narrower than its longest word (flex items won't by default)
+    overflow-wrap: anywhere; // long dates/names wrap instead of pushing the column wider
     display: flex;
     flex-direction: column;
     align-items: flex-start;

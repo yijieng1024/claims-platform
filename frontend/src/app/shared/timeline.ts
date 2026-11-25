@@ -22,8 +22,8 @@ const UPCOMING: Record<string, string[]> = {
   selector: 'app-timeline',
   imports: [DatePipe, TitleCasePipe, StatusChip],
   template: `
-    <!-- scrolls sideways when there are more steps than fit; tabindex lets keyboard users scroll it -->
-    <div class="timeline-scroll" tabindex="0" role="region" aria-label="Claim timeline">
+    <!-- all steps always fit the card width: columns shrink and wrap, no sideways scrolling -->
+    <div aria-label="Claim timeline" role="group">
       <ol class="timeline">
         <!-- steps that happened, with when and by whom; each shows the status the claim moved to -->
         @for (h of history(); track $index; let last = $last) {

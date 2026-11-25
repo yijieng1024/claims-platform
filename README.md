@@ -17,6 +17,9 @@ cd claims-platform
 docker compose up --build
 ```
 
+The stack uses host ports **4200** (frontend), **8081–8083** (services), **5433** (Postgres) and
+**9092** (Kafka). Stop anything else using them first, including the development-mode setup below.
+
 Open **http://localhost:4200** once the `frontend` container has started (compose waits until the
 three services report healthy). The first build downloads base images and all Maven/npm dependencies; it
 took about **3 minutes** on my machine with the base images already downloaded (allow 5–10 minutes
@@ -72,6 +75,20 @@ Each browser tab keeps its own login, so you can have the claimant, officer and 
    *Settled* in *All claims*; *Team performance* counts it.
 6. **Markets are separated.** Log in as `officer.sg1@example.com`: the MY claim is in neither the
    queue nor *My claims*, and opening its URL directly gives "Claim not found".
+
+Re-running the demo on the same data? Pick a different incident date: a policy takes one claim per
+incident date (see below).
+
+**Business rules check** ([DECISIONS.md](docs/DECISIONS.md) 13 and 14).
+
+- **Duplicate claim.** As `claimant1@example.com`, report another incident on `POL-MY-MTR-0001`
+  with the same date as in step 1. It is refused under the date field — "A claim for this incident
+  already exists: CLM-…" — with a link to the existing claim.
+- **Property cover is shared per policy.** As `claimant1@example.com`, report two incidents on
+  `POL-SG-PRP-0002` (Singapore property, sum insured SGD 650,000) on two different dates. As
+  `officer.sg1@example.com`, pick up the first, assess and settle it at 600,000. Pick up the second:
+  its detail shows *Remaining cover* SGD 50,000, and *Assess* / *Settle* refuse anything above it.
+  (Motor policies keep the full sum insured for every claim.)
 
 **Kafka resilience check.** The dashboards are fed by events through Kafka; claims don't depend on it.
 

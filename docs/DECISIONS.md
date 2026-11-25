@@ -1,7 +1,7 @@
 # Key decisions
 
 The decisions that shape the system, each with why and what it costs. The full list of resolved
-questions (Q1–Q29) is in [DESIGN.md §14](DESIGN.md#14-decisions-resolved-open-questions).
+questions (Q1–Q31) is in [DESIGN.md §14](DESIGN.md#14-decisions-resolved-open-questions).
 
 ---
 
@@ -109,6 +109,35 @@ questions (Q1–Q29) is in [DESIGN.md §14](DESIGN.md#14-decisions-resolved-open
   there is no CORS configuration anywhere.
 - **Trade-off:** the first build downloads all dependencies and takes several minutes.
 
+### 13. One claim per policy and incident date (Q30)
+- **Decision:** a policy can't have two claims with the same incident date unless the earlier one was
+  `REJECTED` (a rejected claim may be re-submitted). The second submission gets a 409 naming the
+  existing claim, and the form links to it. A partial unique index on
+  `claims (policy_id, incident_date) WHERE status <> 'REJECTED'` backs up the check, so two
+  simultaneous submissions still produce one claim; the loser gets the same 409, never a 500.
+- **Why:** a second claim for the same incident (even after the first was settled) is a common
+  duplicate-payment and fraud pattern, and the database is the only place a race can be stopped.
+- **Trade-off:** two genuine, separate incidents on the same day on one policy are blocked; the
+  claimant would have to contact the insurer. Matching on date alone also misses a duplicate entered
+  with a slightly different date; that belongs to fraud rules (see next steps).
+
+### 14. Sum insured: per policy for property, per claim for motor (Q31)
+- **Decision:** for **PROPERTY** policies the sum insured is shared by all claims on the policy:
+  reserve and settlement must fit the *remaining cover* (sum insured minus the policy's other
+  `SETTLED` claims; other open claims' reserves are not subtracted). For **MOTOR** policies each
+  claim may be reserved and settled up to the full sum insured, whatever earlier claims paid. Assess
+  and settle lock the policy row (`SELECT … FOR UPDATE`) for both types while checking, so two officers
+  settling two claims on one policy at once can't exceed the cover together. The claim detail shows
+  the remaining cover (for motor, the full sum insured).
+- **Why:** without a per-policy limit, several property claims could together pay more than the
+  policy's maximum. In motor insurance (e.g. in Malaysia) repeat claims are mainly penalised through
+  the No Claim Discount at renewal rather than by reducing the sum insured, and NCD is out of scope.
+- **Trade-off:** one aggregate per policy is simpler than real products, which may have per-section
+  limits (building vs contents), sub-limits and reinstatement of cover. Not subtracting open reserves
+  means two open property claims can each be reserved up to the remaining cover; only settlement is
+  hard-capped. The policy row lock serialises assess/settle on one policy, which is negligible at this
+  scale.
+
 ---
 
 ## Known limitations
@@ -130,6 +159,10 @@ questions (Q1–Q29) is in [DESIGN.md §14](DESIGN.md#14-decisions-resolved-open
 - **No rate limiting** on login and registration.
 - **Policies are seeded reference data**, not integrated with a policy administration system.
 - **No currency conversion**; exposure is per currency only.
+- **One manager role covers all markets.** A single read-only manager sees all six markets; there are
+  no per-market managers or approvers.
+- **One claim per policy per incident date** (decision 13): two genuine incidents on the same day
+  can't both be claimed online.
 
 ## What I'd do next
 
@@ -138,3 +171,31 @@ questions (Q1–Q29) is in [DESIGN.md §14](DESIGN.md#14-decisions-resolved-open
 - Refresh tokens in httpOnly cookies, password reset, rate limiting on login/register.
 - A CI pipeline: both test suites, the compose build and a smoke test of the demo flow.
 - Distributed tracing and metrics across the three services and Kafka.
+
+### Regulatory and domain extensions (closer to real claims operations)
+
+In Malaysia, general insurance and general takaful claims handling is governed by Bank Negara
+Malaysia's *Policy Document on Claims Settlement Practices* (PD CSP, issued July 2024), which sets
+minimum standards including turnaround times for motor and non-motor claims. Steps towards it, and
+towards how claims departments actually work:
+
+- **SLA timers per claim type** (motor vs non-motor) with overdue alerts, since PD CSP sets separate
+  turnaround times. Not built: needs the regulatory clock rules (when it starts, pauses while waiting
+  for the claimant) modelled per market.
+- **Authority matrix:** settlements above a limit need a manager's approval. Not built because today
+  one read-only manager covers all six markets; doing it properly needs an approving manager per
+  market, limits per currency (there is no currency conversion by design) and a new "pending approval"
+  status in the state machine: a redesign, not an add-on.
+- **Straight-through processing** for small, low-risk claims (auto-assess and settle). Not built: needs
+  the risk rules below first, or it pays out without checks.
+- **Motor betterment deduction** by vehicle age when new franchise parts replace old ones. Not built:
+  needs the vehicle's age on the policy, which the seeded policies don't carry.
+- **No Claim Discount (NCD) impact:** a settled motor claim affects the policyholder's NCD at renewal,
+  which is how repeat motor claims are penalised (decision 14). Not built: renewals and premiums are
+  outside this platform.
+- **Fraud red flags** (e.g. very late notification, repeated claims, near-duplicate incident dates)
+  routing claims to an investigation queue. Not built: needs a rules engine and an investigator role.
+- **Registered loss adjuster assignment** for complex or high-value claims. Not built: needs an
+  external party with its own access and a hand-off in the workflow.
+- **Rejection letters** that cite the policy clause and the customer's complaint and appeal route. Not
+  built: needs policy wordings and per-market letter templates.

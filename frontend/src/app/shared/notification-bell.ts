@@ -78,6 +78,14 @@ export class NotificationBell {
   /** Marks it read and opens the claim in the page that fits the user's role. */
   open(n: NotificationView): void {
     this.notifications.markRead(n);
-    this.router.navigateByUrl(this.auth.claimUrl(n.claimId));
+    const url = this.auth.claimUrl(n.claimId);
+    if (this.router.url === url) {
+      // Already on this claim: Angular ignores navigation to the current URL, so the page would keep
+      // showing old data (e.g. no "Action needed" card). Leave and come back without touching the
+      // address bar, which recreates the page and re-reads the claim.
+      this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => this.router.navigateByUrl(url));
+    } else {
+      this.router.navigateByUrl(url);
+    }
   }
 }

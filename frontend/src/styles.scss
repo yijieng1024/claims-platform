@@ -193,6 +193,18 @@ mat-card.table-card {
   }
 }
 
+// Positive final action (§7, Settle): --positive fill, white text. Use on a matButton="filled".
+.btn-positive {
+  @include mat.button-overrides(
+    (
+      filled-container-color: var(--positive),
+      filled-label-text-color: var(--on-brand),
+      filled-disabled-container-color: color-mix(in srgb, var(--positive) 60%, transparent),
+      filled-disabled-label-text-color: color-mix(in srgb, var(--on-brand) 60%, transparent),
+    )
+  );
+}
+
 // Empty states (§7): centred muted text + one primary action
 .empty-state {
   text-align: center;

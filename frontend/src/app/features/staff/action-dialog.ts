@@ -16,8 +16,8 @@ export interface ActionDialogData {
   amount?: { label: string; currency: string; sumInsured: number; min: number; initial?: number | null };
   text: { label: string; required: boolean; maxLength: number };
   confirmLabel: string;
-  /** Styles the confirm button as destructive (FRONTEND-DESIGN.md §7). */
-  destructive?: boolean;
+  /** Confirm button style (FRONTEND-DESIGN.md §7): primary navy (default), positive green (settle) or destructive red (reject). */
+  tone?: 'positive' | 'destructive';
 }
 
 export interface ActionDialogResult {
@@ -37,7 +37,10 @@ export interface ActionDialogResult {
     <form [formGroup]="form" (ngSubmit)="confirm()">
       <mat-dialog-content>
         @if (data.warning) {
-          <p class="warning" [class.danger]="data.destructive"><mat-icon aria-hidden="true">warning_amber</mat-icon>{{ data.warning }}</p>
+          <!-- destructive: a red box; otherwise plain text with an info icon (a caution, not an error or a success) -->
+          <p class="notice" [class.danger]="data.tone === 'destructive'">
+            <mat-icon aria-hidden="true">{{ data.tone === 'destructive' ? 'warning_amber' : 'info_outline' }}</mat-icon>{{ data.warning }}
+          </p>
         }
         @if (data.amount; as a) {
           <p class="muted sum-insured">
@@ -66,8 +69,9 @@ export interface ActionDialogResult {
       <mat-dialog-actions align="end">
         <button matButton type="button" mat-dialog-close>Cancel</button>
         <button
-          [matButton]="data.destructive ? 'tonal' : 'filled'"
-          [class.btn-destructive]="data.destructive"
+          [matButton]="data.tone === 'destructive' ? 'tonal' : 'filled'"
+          [class.btn-destructive]="data.tone === 'destructive'"
+          [class.btn-positive]="data.tone === 'positive'"
           type="submit"
           [disabled]="form.invalid"
         >
@@ -77,18 +81,16 @@ export interface ActionDialogResult {
     </form>
   `,
   styles: `
-    .warning {
+    .notice {
       display: flex;
       gap: 8px;
       align-items: flex-start;
-      padding: 12px 14px;
       border-radius: var(--radius-field);
-      background: var(--warning-soft);
-      color: var(--warning);
       margin: 0 0 16px;
     }
-    /* destructive actions (reject) use the negative colour; a final-but-normal step (settle) the warning one */
-    .warning.danger { background: var(--negative-soft); color: var(--negative); }
+    .notice mat-icon { color: var(--text-muted); flex-shrink: 0; }
+    .notice.danger { padding: 12px 14px; background: var(--negative-soft); color: var(--negative); }
+    .notice.danger mat-icon { color: inherit; }
     .sum-insured { margin: 0 0 12px; }
     mat-dialog-content { min-width: min(440px, 80vw); }
   `,

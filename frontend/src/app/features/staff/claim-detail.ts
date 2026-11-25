@@ -124,6 +124,7 @@ export class StaffClaimDetail implements OnInit {
       amount: { label: 'Settled amount', currency: claim.currency, sumInsured: claim.sumInsured, min: 0, initial: claim.reserveAmount },
       text: { label: 'Note (optional)', required: false, maxLength: 2000 },
       confirmLabel: 'Settle claim',
+      tone: 'positive',
     }, (r) => this.run(this.claimsApi.settle(this.id(), { settledAmount: r.amount!, note: r.text || null }), 'Claim settled.'));
   }
 
@@ -134,7 +135,7 @@ export class StaffClaimDetail implements OnInit {
       warning: 'Rejecting closes the claim and the claimant is told the reason. This can’t be undone.',
       text: { label: 'Reason', required: true, maxLength: 2000 },
       confirmLabel: 'Reject claim',
-      destructive: true,
+      tone: 'destructive',
     }, (r) => this.run(this.claimsApi.reject(this.id(), { reason: r.text }), 'Claim rejected.'));
   }
 

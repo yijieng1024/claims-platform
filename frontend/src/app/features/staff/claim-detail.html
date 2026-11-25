@@ -46,7 +46,7 @@
                 </button>
               }
               @case ('settle') {
-                <button matButton="filled" (click)="settle(claim)" [disabled]="busy()"><mat-icon>check_circle</mat-icon>Settle</button>
+                <button matButton="filled" class="btn-positive" (click)="settle(claim)" [disabled]="busy()"><mat-icon>check_circle</mat-icon>Settle</button>
               }
               @case ('reject') {
                 <button matButton="tonal" class="btn-destructive" (click)="reject()" [disabled]="busy()"><mat-icon>cancel</mat-icon>Reject</button>

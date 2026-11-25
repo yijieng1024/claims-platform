@@ -74,7 +74,7 @@ Each browser tab keeps its own login, so you can have the claimant, officer and 
    (green button) and reload the dashboard: the reserve leaves MYR exposure. The claim shows as
    *Settled* in *All claims*; *Team performance* counts it.
 6. **Markets are separated.** Log in as `officer.sg1@example.com`: the MY claim is in neither the
-   queue nor *My claims*, and opening its URL directly gives "Claim not found".
+   queue nor *My claims*, and opening its URL directly shows "This claim can't be shown."
 
 Re-running the demo on the same data? Pick a different incident date: a policy takes one claim per
 incident date (see below).

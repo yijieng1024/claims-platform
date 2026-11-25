@@ -1,0 +1,11 @@
+# Build context for the three service images is the repo root: send only what Maven needs.
+**/target
+**/node_modules
+frontend
+data
+docs
+infra
+.git
+.idea
+.vscode
+*.md

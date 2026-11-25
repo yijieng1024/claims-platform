@@ -111,7 +111,7 @@ export class StaffClaimDetail implements OnInit {
   assess(claim: ClaimDetail): void {
     this.ask({
       title: claim.status === 'ASSESSED' ? 'Update reserve' : 'Assess claim',
-      amount: { label: 'Reserve amount', currency: claim.currency, sumInsured: claim.sumInsured, min: 0.01, initial: claim.reserveAmount },
+      amount: { label: 'Reserve amount', currency: claim.currency, sumInsured: claim.sumInsured, remainingCover: claim.remainingCover, min: 0.01, initial: claim.reserveAmount },
       text: { label: 'Note (optional)', required: false, maxLength: 2000 },
       confirmLabel: 'Save assessment',
     }, (r) => this.run(this.claimsApi.assess(this.id(), { reserveAmount: r.amount!, note: r.text || null }), 'Assessment saved.'));
@@ -121,7 +121,7 @@ export class StaffClaimDetail implements OnInit {
     this.ask({
       title: 'Settle claim',
       warning: 'Settling closes the claim. This can’t be undone.',
-      amount: { label: 'Settled amount', currency: claim.currency, sumInsured: claim.sumInsured, min: 0, initial: claim.reserveAmount },
+      amount: { label: 'Settled amount', currency: claim.currency, sumInsured: claim.sumInsured, remainingCover: claim.remainingCover, min: 0, initial: claim.reserveAmount },
       text: { label: 'Note (optional)', required: false, maxLength: 2000 },
       confirmLabel: 'Settle claim',
       tone: 'positive',

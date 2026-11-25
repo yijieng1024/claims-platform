@@ -13,7 +13,7 @@ export interface ActionDialogData {
   /** Shown above the fields, e.g. the consequence of rejecting. */
   warning?: string;
   /** Amount field (assess, settle). The client checks min/max/decimals for quick feedback; the backend checks again. */
-  amount?: { label: string; currency: string; sumInsured: number; min: number; initial?: number | null };
+  amount?: { label: string; currency: string; sumInsured: number; remainingCover: number; min: number; initial?: number | null };
   text: { label: string; required: boolean; maxLength: number };
   confirmLabel: string;
   /** Confirm button style (FRONTEND-DESIGN.md §7): primary navy (default), positive green (settle) or destructive red (reject). */
@@ -43,15 +43,21 @@ export interface ActionDialogResult {
           </p>
         }
         @if (data.amount; as a) {
-          <p class="muted sum-insured">
-            Sum insured (maximum payable): <strong class="num">{{ a.sumInsured | money: a.currency }}</strong>
+          <!-- Q31: below the sum insured only on a PROPERTY policy with other settled claims -->
+          <p class="muted cover">
+            @if (a.remainingCover < a.sumInsured) {
+              Remaining cover (maximum payable): <strong class="num">{{ a.remainingCover | money: a.currency }}</strong>
+              of {{ a.sumInsured | money: a.currency }} sum insured
+            } @else {
+              Sum insured (maximum payable): <strong class="num">{{ a.sumInsured | money: a.currency }}</strong>
+            }
           </p>
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>{{ a.label }}</mat-label>
             <span matTextPrefix class="muted">{{ a.currency }}&nbsp;</span>
             <input matInput class="num" type="number" formControlName="amount" cdkFocusInitial />
             @if (form.controls.amount.hasError('max')) {
-              <mat-error>Can't be more than the sum insured</mat-error>
+              <mat-error>Can't be more than the remaining cover</mat-error>
             } @else if (form.controls.amount.hasError('min')) {
               <mat-error>Must be {{ a.min === 0 ? '0 or more' : 'more than 0' }}</mat-error>
             } @else if (form.controls.amount.errors?.['decimals'] === 0) {
@@ -91,7 +97,7 @@ export interface ActionDialogResult {
     .notice mat-icon { color: var(--text-muted); flex-shrink: 0; }
     .notice.danger { padding: 12px 14px; background: var(--negative-soft); color: var(--negative); }
     .notice.danger mat-icon { color: inherit; }
-    .sum-insured { margin: 0 0 12px; }
+    .cover { margin: 0 0 12px; }
     mat-dialog-content { min-width: min(440px, 80vw); }
   `,
 })
@@ -115,7 +121,7 @@ export class ActionDialog {
     if (!a) return [];
     // reserve must be > 0 (backend @Positive); a settlement may be 0 (@PositiveOrZero)
     const min = a.min === 0 ? Validators.min(0) : Validators.min(0.01);
-    return [Validators.required, min, Validators.max(a.sumInsured), decimals(currencyDigits(a.currency))];
+    return [Validators.required, min, Validators.max(a.remainingCover), decimals(currencyDigits(a.currency))];
   }
 }
 

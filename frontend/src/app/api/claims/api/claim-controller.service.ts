@@ -154,7 +154,7 @@ export class ClaimControllerService extends BaseService {
     }
 
     /**
-     * Assigned officer: set or update the reserve (max: sum insured)
+     * Assigned officer: set or update the reserve (max: remaining cover on the policy)
      * @endpoint post /api/claims/{id}/assessment
      * @param id 
      * @param assessmentRequest 
@@ -920,7 +920,7 @@ export class ClaimControllerService extends BaseService {
     }
 
     /**
-     * Assigned officer: settle an ASSESSED claim (max: sum insured)
+     * Assigned officer: settle an ASSESSED claim (max: remaining cover on the policy)
      * @endpoint post /api/claims/{id}/settlement
      * @param id 
      * @param settlementRequest 

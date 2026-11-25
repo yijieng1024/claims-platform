@@ -71,6 +71,11 @@
             <div class="amount num">{{ claim.sumInsured | money: claim.currency }}</div>
           </div>
           <div>
+            <!-- Q31: sum insured minus the policy's other settled claims; caps the reserve and settlement -->
+            <div class="label">Remaining cover</div>
+            <div class="amount num">{{ claim.remainingCover | money: claim.currency }}</div>
+          </div>
+          <div>
             <div class="label">Claimed</div>
             <div class="amount num">{{ claim.claimedAmount | money: claim.currency }}</div>
           </div>

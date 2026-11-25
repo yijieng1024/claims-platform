@@ -27,7 +27,7 @@ async function actionButtons(user: { id: string; role: string }, status: string,
 
   const backend = TestBed.inject(HttpTestingController);
   backend.expectOne('/api/claims/c1').flush({
-    id: 'c1', claimNumber: 'CLM-1', version: 1, status, policyId: 'p', policyNumber: 'POL-1', sumInsured: 10000,
+    id: 'c1', claimNumber: 'CLM-1', version: 1, status, policyId: 'p', policyNumber: 'POL-1', sumInsured: 10000, remainingCover: 10000,
     type: 'MOTOR', market: 'MY', currency: 'MYR', incidentDate: '2026-11-01', incidentLocation: 'KL',
     description: 'd', claimedAmount: 500, claimantId: 'u', claimantName: 'Claimant', assignedOfficerId,
     assignedOfficerName: assignedOfficerId ? 'Officer' : null, createdAt: '2026-11-02T00:00:00Z', updatedAt: '2026-11-02T00:00:00Z',

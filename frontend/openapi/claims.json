@@ -145,7 +145,7 @@
         "tags": [
           "claim-controller"
         ],
-        "summary": "Assigned officer: settle an ASSESSED claim (max: sum insured)",
+        "summary": "Assigned officer: settle an ASSESSED claim (max: remaining cover on the policy)",
         "operationId": "settle",
         "parameters": [
           {
@@ -479,7 +479,7 @@
         "tags": [
           "claim-controller"
         ],
-        "summary": "Assigned officer: set or update the reserve (max: sum insured)",
+        "summary": "Assigned officer: set or update the reserve (max: remaining cover on the policy)",
         "operationId": "assess",
         "parameters": [
           {
@@ -829,6 +829,9 @@
           "sumInsured": {
             "type": "number"
           },
+          "remainingCover": {
+            "type": "number"
+          },
           "type": {
             "type": "string"
           },
@@ -936,6 +939,7 @@
           "market",
           "policyId",
           "policyNumber",
+          "remainingCover",
           "status",
           "sumInsured",
           "type",

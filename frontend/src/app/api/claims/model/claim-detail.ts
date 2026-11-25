@@ -18,6 +18,7 @@ export interface ClaimDetail {
     policyId: string;
     policyNumber: string;
     sumInsured: number;
+    remainingCover: number;
     type: string;
     market: string;
     currency: string;

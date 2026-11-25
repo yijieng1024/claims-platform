@@ -1,5 +1,22 @@
-# Local infrastructure. The services run from the IDE / mvn for now (added here in a later step).
+# The whole platform: `docker compose up --build`, then open http://localhost:4200.
+# Infrastructure only (for running the services from Maven and the frontend with npm start):
+#   docker compose up -d postgres kafka kafka-init
+# All passwords here are local demo values, not secrets.
 name: claims-platform
+
+# Shared by the three services: where to fetch auth-service's public keys, and the exact "iss" value the
+# tokens carry. With a JWKS URL set, Spring only compares iss as a string; it never calls the issuer URL
+# (which inside a container would point at the container itself).
+x-jwt: &jwt
+  AUTH_JWKS_URI: http://auth-service:8081/.well-known/jwks.json
+  AUTH_JWT_ISSUER: http://localhost:8081
+
+# Each service reports UP on /actuator/health once its database (and Flyway) are ready.
+x-health: &health
+  interval: 5s
+  timeout: 3s
+  retries: 30
+  start_period: 30s
 
 services:
   postgres:
@@ -68,6 +85,83 @@ services:
         done
     restart: "no"
 
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    environment:
+      <<: *jwt
+      AUTH_DB_URL: jdbc:postgresql://postgres:5432/claims_platform
+      # the RSA signing key, created on first start and kept on a volume so tokens survive a restart
+      AUTH_JWT_KEY_PATH: /data/keys/auth-jwt-key.pem
+      # registration checks the policy number with claims-service
+      CLAIMS_SERVICE_URL: http://claims-service:8082
+    ports:
+      - "8081:8081"   # Swagger UI: http://localhost:8081/swagger-ui.html
+    volumes:
+      - authkeys:/data/keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep -q UP"]
+
+  claims-service:
+    build:
+      context: .
+      dockerfile: services/claims-service/Dockerfile
+    environment:
+      <<: *jwt
+      CLAIMS_DB_URL: jdbc:postgresql://postgres:5432/claims_platform
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      DOCUMENTS_ROOT: /data/uploads
+    ports:
+      - "8082:8082"
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      <<: *health
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health | grep -q UP"]
+
+  reporting-service:
+    build:
+      context: .
+      dockerfile: services/reporting-service/Dockerfile
+    environment:
+      <<: *jwt
+      REPORTING_DB_URL: jdbc:postgresql://postgres:5432/claims_platform
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      <<: *health
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health | grep -q UP"]
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "4200:80"     # the app: http://localhost:4200
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      claims-service:
+        condition: service_healthy
+      reporting-service:
+        condition: service_healthy
+
 volumes:
   pgdata:
   kafkadata:
+  authkeys:
+  uploads:

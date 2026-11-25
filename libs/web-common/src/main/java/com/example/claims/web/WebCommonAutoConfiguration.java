@@ -48,7 +48,8 @@ public class WebCommonAutoConfiguration {
                 .csrf(csrf -> csrf.disable()) // stateless bearer tokens, no cookies
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll();
+                    // /actuator/health: compose healthchecks (UP/DOWN only, no details)
+                    auth.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error", "/actuator/health").permitAll();
                     urlRules.configure(auth);
                 })
                 .oauth2ResourceServer(rs -> rs

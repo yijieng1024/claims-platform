@@ -5,12 +5,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { Logo } from './shared/logo';
+import { NotificationBell } from './shared/notification-bell';
 import { AuthService } from './core/auth.service';
 
 /** The app shell: the floating top nav + the current page (<router-outlet>). */
 @Component({
   selector: 'app-root',
-  imports: [Logo, RouterOutlet, RouterLink, RouterLinkActive, TitleCasePipe, MatButtonModule, MatIconModule, MatMenuModule],
+  imports: [Logo, NotificationBell, RouterOutlet, RouterLink, RouterLinkActive, TitleCasePipe, MatButtonModule, MatIconModule, MatMenuModule],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

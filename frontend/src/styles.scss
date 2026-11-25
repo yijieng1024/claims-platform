@@ -131,6 +131,68 @@ mat-card.table-card {
   );
 }
 
+// Hidden on screen, still read by screen readers
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Notification panel (the bell's mat-menu, a glass overlay). It is rendered outside the bell component,
+// so its content is styled here. Unread = dot + bold title + "Unread:" for screen readers.
+.notification-panel {
+  .panel-head {
+    padding: 10px 16px 8px;
+    font-weight: 700;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .item {
+    height: auto;
+    min-height: 0;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    white-space: normal;
+    line-height: 1.4;
+    font-size: 13px;
+  }
+
+  .item-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .unread .item-title {
+    font-weight: 700;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--brand);
+  }
+
+  .when {
+    font-size: 12px;
+  }
+
+  .empty {
+    margin: 0;
+    padding: 16px;
+  }
+}
+
 // Empty states (§7): centred muted text + one primary action
 .empty-state {
   text-align: center;

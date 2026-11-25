@@ -47,3 +47,10 @@
 .mat-mdc-form-field-required-marker {
   color: var(--negative);
 }
+
+// The notification panel (a mat-menu) needs room for a sentence per item; the menu's 280px max width has no token.
+.mat-mdc-menu-panel.notification-panel {
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: 70vh;
+}

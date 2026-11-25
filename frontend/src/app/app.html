@@ -28,6 +28,7 @@
   <span class="spacer"></span>
 
   @if (auth.user(); as user) {
+    <app-notification-bell />
     <!-- mat-menu sets aria-expanded on its trigger automatically (§8) -->
     <button matButton class="user-button" [matMenuTriggerFor]="userMenu" [attr.aria-label]="'Account menu for ' + user.name">
       <span class="avatar" aria-hidden="true">{{ initial() }}</span>

@@ -1,6 +1,6 @@
-# Claims Platform — Architecture & Data Model (v0.9)
+# Claims Platform — Architecture & Data Model (v1.1)
 
-Status: **v0.9 - decisions agreed** (see section 14).
+Status: **v1.1 - decisions agreed** (see section 14).
 
 ---
 
@@ -93,6 +93,7 @@ Rules for opening a claim:
 - The policy must not be cancelled, and the **incident date must fall between the policy start and end date**.
 - The incident date cannot be in the future.
 - Claim `type`, `market` and `currency` are **copied from the policy**, not chosen by the claimant.
+- **No duplicate claims:** a policy can't have two claims for the same incident date unless the earlier one was `REJECTED` (a rejected claim may be re-submitted). Enforced in the service (friendly 409 naming the existing claim number) **and** by a partial unique index on `(policy_id, incident_date) WHERE status <> 'REJECTED'`, so two simultaneous submissions can't both succeed.
 
 Rules after that:
 - Only the **assigned officer** can act on a claim after pick-up.
@@ -100,7 +101,11 @@ Rules after that:
 - Only the **claim owner** can respond to an information request.
 - `ASSESSED → INFO_REQUESTED` is allowed: if the officer needs more information after assessing, they request it directly. When the claimant responds the claim goes back to `UNDER_REVIEW` and the officer assesses again (reserve can be updated). This avoids a separate "reopen" action.
 - `SETTLED` and `REJECTED` are terminal.
-- `reserve_amount` and `settled_amount` cannot exceed the policy's `sum_insured` (the maximum payable).
+- **How sum insured limits a claim depends on the product:**
+  - **PROPERTY** — sum insured is a **per-policy total**: each payout reduces what's left (as in property policies with a "reinstatement of sum insured" clause, where cover is reduced by the claim paid unless reinstated). Remaining cover = `sum_insured` − total `settled_amount` of the policy's other `SETTLED` claims. `reserve_amount` and `settled_amount` must be ≤ remaining cover. Reserves of other open claims are estimates and are not subtracted.
+  - **MOTOR** — **per claim**: each claim's reserve and settlement ≤ `sum_insured` (the vehicle's market value); other settled claims don't reduce it. In Malaysian motor insurance, repeated claims are mainly penalised through the No Claim Discount (NCD) at renewal — out of scope.
+  - Assess and settle lock the **policy row** while checking (both products), so two officers settling two claims on the same policy at the same time can't exceed the limit.
+  - `remainingCover` in the claim detail: property → remaining cover as above; motor → the full sum insured.
 - Officers can only see and act on claims in **their own market** (queue, assigned list and claim detail). Managers see all markets.
 - Every transition writes a row to `claim_status_history` and an event to the outbox, **in the same transaction**.
 - The transition rules live in one class (`ClaimStateMachine`) with unit tests for every allowed and every forbidden transition.
@@ -438,6 +443,7 @@ Repo layout:
 - Claim withdrawal by claimant, reassigning a claim between officers
 - API gateway, service discovery, distributed tracing
 - Currency conversion / live FX rates (see Q2)
+- No Claim Discount (NCD) impact of motor claims; reinstatement of property sum insured after a claim
 
 ---
 
@@ -473,6 +479,8 @@ Repo layout:
 | Q27 | IDR display | IDR shown and entered without decimals (VND already 0) | Matches common practice. |
 | Q28 | Required fields in OpenAPI | Mark always-present response fields as required; regenerate the client | Otherwise every generated field is optional, which weakens "the contract is enforced by the build". |
 | Q29 | Visual design | Angular Material restyled to `docs/FRONTEND-DESIGN.md` (adapted from my PickWise design system); no dark mode | Default Material look was not good enough; a re-skin keeps the working components. |
+| Q30 | Duplicate claims | Block a second claim on the same policy + incident date unless the earlier one was rejected; service check + partial unique index | Duplicate claims are a common fraud pattern; spotted by me after the platform was built. |
+| Q31 | Sum insured scope | **Property:** per-policy total — remaining cover shrinks with each settled claim. **Motor:** per claim, capped at sum insured; no reduction from other claims. Policy row locked during assess/settle for both. | Several property claims could otherwise pay out more than the policy's maximum. Revised after research: motor and property treat repeated claims differently (motor mainly through NCD at renewal). |
 | Q6 | Markets | **MY, SG, TH, ID, PH, VN** (MYR, SGD, THB, IDR, PHP, VND) | Six Southeast Asian markets; illustrative only. |
 
 ### The three amounts on a claim
